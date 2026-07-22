@@ -1,0 +1,70 @@
+s apiObj = cj.api()
+s userName = ""
+
+f(zy.onCreate)
+{
+  zy.setContentView("main.xml")
+  zy.getWindow().setFlags(1024, 1024)
+  
+  s info = apiObj.getUserInfo()
+  if(info != null && info != "")
+  {
+    userName = extractJsonValue(info, "userName")
+    if(userName == null || userName == "") userName = "玩家"
+    
+    s tvWelcome = st.tv(zy.id.tvWelcome)
+    tvWelcome.setText("欢迎回来，" + userName)
+  }
+  
+  if(apiObj.isLoggedIn() == false)
+  {
+    uigo("login.iyu")
+    zy.finish()
+  }
+}
+
+f(btnStartGame.clicki)
+{
+  tw("游戏开发中，敬请期待！")
+}
+
+f(btnProfile.clicki)
+{
+  tw("个人中心开发中")
+}
+
+f(btnSettings.clicki)
+{
+  tw("设置开发中")
+}
+
+f(btnLogout.clicki)
+{
+  apiObj.clearUserInfo()
+  tw("已退出登录")
+  uigo("login.iyu")
+  zy.finish()
+}
+
+ff s extractJsonValue(s json, s key)
+{
+  s start = json.indexOf("\"" + key + "\":")
+  if(start == -1) fh null
+  
+  s start2 = json.indexOf(":", start) + 1
+  s trimmed = json.substring(start2).trim()
+  
+  if(trimmed ?* "\"")
+  {
+    s end = trimmed.indexOf("\"", 1)
+    if(end == -1) fh null
+    fh trimmed.substring(1, end)
+  }
+  else
+  {
+    s end = trimmed.indexOf(",")
+    if(end == -1) end = trimmed.indexOf("}")
+    if(end == -1) fh null
+    fh trimmed.substring(0, end).trim()
+  }
+}
