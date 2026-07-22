@@ -1,0 +1,89 @@
+qj s baseUrl = config.BASE_URL
+
+ff lei()
+{
+}
+
+ff s postRequest(s url, s data, s callbackName)
+{
+  t()
+  {
+    hs(url, data, "utf-8", b)
+    gj.jmxc()
+    {
+      if(callbackName != null)
+      {
+        ssj(zy.id.hiddenCallback, "clicki")
+        {
+          eval(callbackName + "(b)")
+        }
+        sj(zy.id.hiddenCallback)
+      }
+    }
+  }
+}
+
+ff s register(s username, s password, s email)
+{
+  s data = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\",\"email\":\"" + email + "\"}"
+  t()
+  {
+    hs(config.API_REGISTER, data, "utf-8", b)
+    gj.jmxc()
+    {
+      ssj(zy.id.registerCallback, "clicki")
+      {
+        eval("onRegisterResult(\"" + b + "\")")
+      }
+      sj(zy.id.registerCallback)
+    }
+  }
+}
+
+ff s login(s username, s password)
+{
+  s data = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}"
+  t()
+  {
+    hs(config.API_LOGIN, data, "utf-8", b)
+    gj.jmxc()
+    {
+      ssj(zy.id.loginCallback, "clicki")
+      {
+        eval("onLoginResult(\"" + b + "\")")
+      }
+      sj(zy.id.loginCallback)
+    }
+  }
+}
+
+ff s saveUserInfo(s userId, s userName, s token)
+{
+  fw("%user_info.txt", "{\"userId\":\"" + userId + "\",\"userName\":\"" + userName + "\",\"token\":\"" + token + "\"}")
+}
+
+ff s getUserInfo()
+{
+  fe("%user_info.txt", exists)
+  if(exists == true)
+  {
+    fr("%user_info.txt", content)
+    fh content
+  }
+  fh null
+}
+
+ff s clearUserInfo()
+{
+  fd("%user_info.txt", result)
+}
+
+ff s isLoggedIn()
+{
+  s info = getUserInfo()
+  if(info != null && info != "")
+  {
+    fh true
+  }
+  fh false
+}
