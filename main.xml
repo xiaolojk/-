@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#0f172a">
+    android:background="#1a1a0a">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,21 +17,13 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <View
-                android:layout_width="8dp"
-                android:layout_height="32dp"
-                android:background="#6366f1"
-                android:layout_marginRight="12dp"
-                android:layout_gravity="center_vertical"
-                android:radius="4dp"/>
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="卡牌对决"
+                android:text="像素生存"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="#ffffff"/>
+                android:textColor="#4ade80"/>
         </LinearLayout>
 
         <View
@@ -43,11 +35,11 @@
             android:id="@+id/btnLogout"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="#1e293b"
-            android:radius="12dp"
+            android:background="#2a2a15"
+            android:radius="8dp"
             android:text="↻"
             android:textSize="18sp"
-            android:textColor="#94a3b8"/>
+            android:textColor="#8a8a6a"/>
     </LinearLayout>
 
     <LinearLayout
@@ -62,16 +54,16 @@
             android:id="@+id/tvWelcome"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="欢迎回来，玩家"
+            android:text="幸存者"
             android:textSize="20sp"
-            android:textColor="#ffffff"/>
+            android:textColor="#f0f0e0"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="准备好开始新的挑战了吗？"
+            android:text="荒野求生，开始了"
             android:textSize="14sp"
-            android:textColor="#94a3b8"
+            android:textColor="#8a8a6a"
             android:layout_marginTop="4dp"/>
     </LinearLayout>
 
@@ -87,12 +79,12 @@
             android:id="@+id/btnStartGame"
             android:layout_width="match_parent"
             android:layout_height="80dp"
-            android:text="开始游戏"
+            android:text="开 始 探 索"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="#ffffff"
-            android:background="#6366f1"
-            android:radius="16dp"/>
+            android:textColor="#1a1a0a"
+            android:background="#4ade80"
+            android:radius="8dp"/>
     </LinearLayout>
 
     <LinearLayout
@@ -104,55 +96,57 @@
         android:layout_marginBottom="16dp">
 
         <LinearLayout
-            android:id="@+id/btnProfile"
+            android:id="@+id/btnInventory"
             android:layout_width="0dp"
-            android:layout_height="120dp"
+            android:layout_height="100dp"
             android:layout_weight="1"
-            android:background="#1e293b"
-            android:radius="16dp"
+            android:background="#2a2a15"
+            android:radius="8dp"
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginRight="12dp">
 
-            <View
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="#6366f1"
-                android:radius="24dp"
-                android:layout_marginBottom="12dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="背包"
+                android:textSize="16sp"
+                android:textColor="#4ade80"
+                android:layout_marginBottom="4dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="个人中心"
-                android:textSize="14sp"
-                android:textColor="#ffffff"/>
+                android:text="查看物品"
+                android:textSize="12sp"
+                android:textColor="#5a5a3a"/>
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/btnSettings"
+            android:id="@+id/btnCraft"
             android:layout_width="0dp"
-            android:layout_height="120dp"
+            android:layout_height="100dp"
             android:layout_weight="1"
-            android:background="#1e293b"
-            android:radius="16dp"
+            android:background="#2a2a15"
+            android:radius="8dp"
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginLeft="12dp">
 
-            <View
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="#8b5cf6"
-                android:radius="24dp"
-                android:layout_marginBottom="12dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="制造"
+                android:textSize="16sp"
+                android:textColor="#a3e635"
+                android:layout_marginBottom="4dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="设置"
-                android:textSize="14sp"
-                android:textColor="#ffffff"/>
+                android:text="工具与装备"
+                android:textSize="12sp"
+                android:textColor="#5a5a3a"/>
         </LinearLayout>
     </LinearLayout>
 
@@ -161,24 +155,12 @@
         android:layout_height="0dp"
         android:layout_weight="1"/>
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#334155"
-            android:layout_marginBottom="16dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="版本 1.0.0"
-            android:textSize="12sp"
-            android:textColor="#64748b"
-            android:layout_gravity="center_horizontal"/>
-    </LinearLayout>
+        android:text="版本 1.0.0"
+        android:textSize="12sp"
+        android:textColor="#5a5a3a"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="24dp"/>
 </LinearLayout>
