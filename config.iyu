@@ -1,4 +1,4 @@
-qj s BASE_URL = "https://api.example.com"
+qj s BASE_URL = "http://localhost:3000"
 qj s API_REGISTER = BASE_URL + "/user/register"
 qj s API_LOGIN = BASE_URL + "/user/login"
 qj s API_CHECK_TOKEN = BASE_URL + "/user/check-token"
