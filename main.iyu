@@ -10,10 +10,10 @@ f(zy.onCreate)
   if(info != null && info != "")
   {
     userName = extractJsonValue(info, "userName")
-    if(userName == null || userName == "") userName = "玩家"
+    if(userName == null || userName == "") userName = "幸存者"
     
     s tvWelcome = st.tv(zy.id.tvWelcome)
-    tvWelcome.setText("欢迎回来，" + userName)
+    tvWelcome.setText("幸存者 " + userName)
   }
   
   if(apiObj.isLoggedIn() == false)
@@ -25,23 +25,23 @@ f(zy.onCreate)
 
 f(btnStartGame.clicki)
 {
-  tw("游戏开发中，敬请期待！")
+  uigo("game.iyu")
 }
 
-f(btnProfile.clicki)
+f(btnInventory.clicki)
 {
-  tw("个人中心开发中")
+  tw("背包系统开发中")
 }
 
-f(btnSettings.clicki)
+f(btnCraft.clicki)
 {
-  tw("设置开发中")
+  tw("制造系统开发中")
 }
 
 f(btnLogout.clicki)
 {
   apiObj.clearUserInfo()
-  tw("已退出登录")
+  tw("已退出")
   uigo("login.iyu")
   zy.finish()
 }
