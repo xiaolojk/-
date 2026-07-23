@@ -3,33 +3,23 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 主菜单 UI
+/// 主菜单
 /// </summary>
 public class MainMenuUI : MonoBehaviour
 {
     public Text welcomeText;
     public Button startGameButton;
-    public Button inventoryButton;
-    public Button settingsButton;
     public Button logoutButton;
 
     void Start()
     {
-        string username = PlayerPrefs.GetString("CurrentUser", "冒险者");
-        welcomeText.text = "欢迎, " + username + "!";
-
-        startGameButton.onClick.AddListener(StartGame);
-        logoutButton.onClick.AddListener(Logout);
-    }
-
-    void StartGame()
-    {
-        SceneManager.LoadScene("GameScene");
-    }
-
-    void Logout()
-    {
-        PlayerPrefs.DeleteKey("CurrentUser");
-        SceneManager.LoadScene("LoginScene");
+        string username = PlayerPrefs.GetString("CurrentUser", "失忆者");
+        welcomeText.text = "迷失者: " + username;
+        startGameButton.onClick.AddListener(() => SceneManager.LoadScene("GameScene"));
+        logoutButton.onClick.AddListener(() =>
+        {
+            PlayerPrefs.DeleteKey("CurrentUser");
+            SceneManager.LoadScene("LoginScene");
+        });
     }
 }

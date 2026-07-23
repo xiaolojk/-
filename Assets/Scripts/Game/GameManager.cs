@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 using System.IO;
 
 /// <summary>
-/// 游戏全局管理器 - 单例
+/// 游戏全局管理器
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
 
     public UserData currentUserData;
     public bool isGamePaused = false;
+    public bool isFirstLaunch = true;
 
     private const string CURRENT_USER_KEY = "CurrentUser";
 
@@ -81,7 +82,6 @@ public class GameManager : MonoBehaviour
             currentUserData.water = inventory.GetItemCount("water");
         }
 
-        // 保存到文件
         string path = Path.Combine(Application.persistentDataPath, "user_data.json");
         if (File.Exists(path))
         {

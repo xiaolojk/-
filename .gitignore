@@ -6,8 +6,6 @@
 [Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
-
-# Visual Studio cache #
 .vs/
 *.csproj
 *.unityproj
@@ -23,27 +21,16 @@
 *.mdb
 *.opendb
 *.VC.db
-
-# OS generated #
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Unity3D generated meta files
 *.pidb.meta
 *.pdb.meta
 *.mdb.meta
-
-# JetBrains Rider #
 .idea/
 *.sln.iml
-
-# VS Code #
 .vscode/
-
-# Asset meta data should be tracked
 !*.meta

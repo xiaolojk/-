@@ -1,18 +1,16 @@
 using UnityEngine;
 
 /// <summary>
-/// 背包系统 - 物品存储与管理
+/// 背包系统 - 支持新物品类型
 /// </summary>
 public class Inventory : MonoBehaviour
 {
-    public const int MAX_SLOTS = 24;
-
+    public const int MAX_SLOTS = 28;
     public string[] items = new string[MAX_SLOTS];
     public int[] counts = new int[MAX_SLOTS];
 
     void Start()
     {
-        // 加载存档
         var gm = GameManager.Instance;
         if (gm != null && gm.currentUserData != null)
         {
@@ -27,7 +25,6 @@ public class Inventory : MonoBehaviour
 
     public bool AddItem(string itemName, int amount = 1)
     {
-        // 先尝试堆叠到已有槽位
         for (int i = 0; i < MAX_SLOTS; i++)
         {
             if (items[i] == itemName)
@@ -36,8 +33,6 @@ public class Inventory : MonoBehaviour
                 return true;
             }
         }
-
-        // 找空槽位
         for (int i = 0; i < MAX_SLOTS; i++)
         {
             if (string.IsNullOrEmpty(items[i]))
@@ -47,7 +42,6 @@ public class Inventory : MonoBehaviour
                 return true;
             }
         }
-
         Debug.Log("背包已满！");
         return false;
     }
@@ -82,15 +76,31 @@ public class Inventory : MonoBehaviour
     {
         int total = 0;
         for (int i = 0; i < MAX_SLOTS; i++)
-        {
-            if (items[i] == itemName)
-                total += counts[i];
-        }
+            if (items[i] == itemName) total += counts[i];
         return total;
     }
 
     public bool HasItem(string itemName, int amount = 1)
     {
         return GetItemCount(itemName) >= amount;
+    }
+
+    public void DropRandomItems(int count)
+    {
+        int dropped = 0;
+        for (int i = 0; i < MAX_SLOTS && dropped < count; i++)
+        {
+            if (!string.IsNullOrEmpty(items[i]))
+            {
+                int drop = Mathf.Min(counts[i], Random.Range(1, 3));
+                counts[i] -= drop;
+                dropped++;
+                if (counts[i] <= 0)
+                {
+                    items[i] = "";
+                    counts[i] = 0;
+                }
+            }
+        }
     }
 }

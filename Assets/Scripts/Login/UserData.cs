@@ -1,8 +1,5 @@
 using System;
 
-/// <summary>
-/// 用户数据模型 - 用于登录注册
-/// </summary>
 [Serializable]
 public class UserData
 {
@@ -10,7 +7,6 @@ public class UserData
     public string password;
     public string email;
 
-    // 游戏进度
     public float maxHP = 100f;
     public float maxHunger = 100f;
     public float maxThirst = 100f;
@@ -20,6 +16,8 @@ public class UserData
     public int water = 0;
     public float posX = 0f;
     public float posY = 0f;
-    public string[] inventory = new string[24];
-    public int[] inventoryCounts = new int[24];
+    public string[] inventory = new string[28];
+    public int[] inventoryCounts = new int[28];
+    public int cluesFound = 0;
+    public float playTime = 0f;
 }

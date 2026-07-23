@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 摄像机跟随玩家
+/// 摄像机跟随
 /// </summary>
 public class CameraFollow : MonoBehaviour
 {
@@ -14,17 +14,14 @@ public class CameraFollow : MonoBehaviour
         if (target == null)
         {
             var player = FindObjectOfType<PlayerController>();
-            if (player != null)
-                target = player.transform;
+            if (player != null) target = player.transform;
         }
     }
 
     void LateUpdate()
     {
         if (target == null) return;
-
-        Vector3 desiredPosition = target.position + offset;
-        Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
-        transform.position = smoothedPosition;
+        Vector3 desired = target.position + offset;
+        transform.position = Vector3.Lerp(transform.position, desired, smoothSpeed);
     }
 }

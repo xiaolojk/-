@@ -1,28 +1,33 @@
 using UnityEngine;
 
 /// <summary>
-/// 玩家移动控制 - 2D 俯视角/平台移动，支持触屏虚拟摇杆和键盘
+/// 玩家控制器 - 2D移动 + 攀爬梯子 + 水中减速
 /// </summary>
 public class PlayerController : MonoBehaviour
 {
-    [Header("移动设置")]
-    public float moveSpeed = 5f;
-    public Rigidbody2D rb;
+    [Header("移动")]
+    public float moveSpeed = 4f;
+    public float waterSpeedMultiplier = 0.4f;  // 水中移动速度倍率
+    public float climbSpeed = 2f;              // 攀爬速度
 
-    [Header("动画")]
-    public Animator animator;
+    [Header("组件")]
+    public Rigidbody2D rb;
     public SpriteRenderer spriteRenderer;
+    public Animator animator;
+
+    [Header("状态")]
+    public bool isClimbing = false;
+    public bool isInWater = false;
+    public bool isInMineshaft = false;
 
     private Vector2 movement;
-    private bool isMoving = false;
+    private WorldManager world;
 
     void Start()
     {
-        if (rb == null)
-            rb = GetComponent<Rigidbody2D>();
-
-        if (spriteRenderer == null)
-            spriteRenderer = GetComponent<SpriteRenderer>();
+        if (rb == null) rb = GetComponent<Rigidbody2D>();
+        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
+        world = WorldManager.Instance;
 
         // 加载存档位置
         var gm = GameManager.Instance;
@@ -34,49 +39,83 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // 键盘输入
         float moveX = Input.GetAxis("Horizontal");
         float moveY = Input.GetAxis("Vertical");
 
-        movement = new Vector2(moveX, moveY).normalized;
-        isMoving = movement.magnitude > 0.1f;
+        // 水中检测
+        isInWater = world != null && transform.position.y < world.waterLevel;
 
-        // 翻转朝向
-        if (moveX > 0.1f)
+        // 攀爬时只能上下移动
+        if (isClimbing)
         {
-            spriteRenderer.flipX = false;
+            movement = new Vector2(0, moveY);
         }
-        else if (moveX < -0.1f)
+        else
         {
-            spriteRenderer.flipX = true;
+            movement = new Vector2(moveX, moveY).normalized;
         }
+
+        // 水中减速
+        float speed = isInWater ? moveSpeed * waterSpeedMultiplier : moveSpeed;
+        if (isClimbing) speed = climbSpeed;
+
+        // 翻转
+        if (moveX > 0.1f) spriteRenderer.flipX = false;
+        else if (moveX < -0.1f) spriteRenderer.flipX = true;
 
         // 动画
         if (animator != null)
         {
-            animator.SetBool("IsMoving", isMoving);
-            animator.SetFloat("MoveX", moveX);
-            animator.SetFloat("MoveY", moveY);
+            animator.SetBool("IsMoving", movement.magnitude > 0.1f);
+            animator.SetBool("IsClimbing", isClimbing);
+            animator.SetBool("IsInWater", isInWater);
         }
     }
 
     void FixedUpdate()
     {
-        rb.velocity = movement * moveSpeed;
+        float speed = isInWater ? moveSpeed * waterSpeedMultiplier : moveSpeed;
+        if (isClimbing) speed = climbSpeed;
+        rb.velocity = movement * speed;
+
+        // 水中上浮力
+        if (isInWater && !isClimbing)
+        {
+            float buoyancy = 1.5f;
+            rb.AddForce(Vector2.up * buoyancy, ForceMode2D.Force);
+        }
     }
 
     /// <summary>
-    /// 虚拟摇杆输入 - 供 UI 按钮调用
+    /// D-Pad 移动输入
     /// </summary>
-    public void OnVirtualJoystickMove(Vector2 direction)
+    public void OnDpadMove(Vector2 dir)
     {
-        movement = direction.normalized;
-        isMoving = direction.magnitude > 0.1f;
+        movement = dir.normalized;
     }
 
-    public void OnVirtualJoystickUp()
+    public void OnDpadUp()
     {
         movement = Vector2.zero;
-        isMoving = false;
+    }
+
+    /// <summary>
+    /// 进入矿井
+    /// </summary>
+    public void EnterMineshaft(Mineshaft shaft)
+    {
+        isInMineshaft = true;
+        isClimbing = true;
+        Vector3 targetPos = new Vector3(shaft.position.x, shaft.position.y - (shaft.depth * 10f), 0);
+        transform.position = targetPos;
+    }
+
+    /// <summary>
+    /// 离开矿井
+    /// </summary>
+    public void ExitMineshaft()
+    {
+        isInMineshaft = false;
+        isClimbing = false;
     }
 }

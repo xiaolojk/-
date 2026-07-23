@@ -2,9 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-/// <summary>
-/// 背包 UI 面板
-/// </summary>
 public class InventoryUI : MonoBehaviour
 {
     public GameObject itemSlotPrefab;
@@ -25,27 +22,18 @@ public class InventoryUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    void OnEnable()
-    {
-        RefreshSlots();
-    }
+    void OnEnable() { RefreshSlots(); }
 
     void RefreshSlots()
     {
-        // 清除旧槽位
         foreach (var obj in slotObjects) Destroy(obj);
         slotObjects.Clear();
-
         for (int i = 0; i < inventory.items.Length; i++)
         {
             var slot = Instantiate(itemSlotPrefab, slotsParent);
             slotObjects.Add(slot);
-
             var slotUI = slot.GetComponent<InventorySlotUI>();
-            if (slotUI != null)
-            {
-                slotUI.Setup(inventory, i, OnSlotSelected);
-            }
+            if (slotUI != null) slotUI.Setup(inventory, i, OnSlotSelected);
         }
     }
 
@@ -53,13 +41,9 @@ public class InventoryUI : MonoBehaviour
     {
         selectedSlot = index;
         if (selectedSlot >= 0 && !string.IsNullOrEmpty(inventory.items[index]))
-        {
             selectedItemInfo.text = $"{inventory.items[index]} x{inventory.counts[index]}";
-        }
         else
-        {
             selectedItemInfo.text = "";
-        }
     }
 
     void UseSelected()
@@ -67,17 +51,16 @@ public class InventoryUI : MonoBehaviour
         if (selectedSlot < 0) return;
         string itemName = inventory.items[selectedSlot];
         if (string.IsNullOrEmpty(itemName)) return;
-
         var stats = FindObjectOfType<PlayerStats>();
-        if (itemName == "food")
+        if (itemName == "food" || itemName == "cooked_meat")
         {
-            inventory.RemoveItem("food", 1);
-            stats?.Eat(20f);
+            inventory.RemoveItem(itemName, 1);
+            stats?.Eat(itemName == "cooked_meat" ? 40f : 20f);
         }
-        else if (itemName == "water")
+        else if (itemName == "clean_water" || itemName == "water")
         {
-            inventory.RemoveItem("water", 1);
-            stats?.Drink(20f);
+            inventory.RemoveItem(itemName, 1);
+            stats?.Drink(itemName == "clean_water" ? 30f : 15f);
         }
         RefreshSlots();
     }
