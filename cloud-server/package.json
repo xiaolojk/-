@@ -1,0 +1,13 @@
+{
+  "name": "card-game-cloud",
+  "version": "1.0.0",
+  "description": "卡牌游戏云服务器",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "vite": "^5.0.0"
+  }
+}
