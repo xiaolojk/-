@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1a1a0a">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:background="#2a2a15">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="40dp"
+            android:background="#3a3a20"
+            android:radius="6dp"
+            android:text="←"
+            android:textSize="16sp"
+            android:textColor="#4ade80"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="荒野探索"
+            android:textSize="16sp"
+            android:textColor="#4ade80"
+            android:textStyle="bold"
+            android:layout_marginLeft="12dp"/>
+
+        <TextView
+            android:id="@+id/tvHealth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="HP:100"
+            android:textSize="14sp"
+            android:textColor="#ef4444"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:background="#1a1a0a">
+
+        <TextView
+            android:id="@+id/tvHunger"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="饥饿:100"
+            android:textSize="12sp"
+            android:textColor="#fbbf24"/>
+
+        <TextView
+            android:id="@+id/tvThirst"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="口渴:100"
+            android:textSize="12sp"
+            android:textColor="#38bdf8"
+            android:gravity="center"/>
+
+        <TextView
+            android:id="@+id/tvFood"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="食物:0"
+            android:textSize="12sp"
+            android:textColor="#f0f0e0"
+            android:gravity="right"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/tvWood"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="木材:0"
+            android:textSize="12sp"
+            android:textColor="#8a8a6a"/>
+
+        <TextView
+            android:id="@+id/tvStone"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="石料:0"
+            android:textSize="12sp"
+            android:textColor="#8a8a6a"
+            android:gravity="right"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#3a3a20"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#0d2818">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <FrameLayout
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="#2a4a1a"
+                    android:radius="4dp">
+
+                    <TextView
+                        android:id="@+id/tvPlayer"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="◆"
+                        android:textSize="28sp"
+                        android:textColor="#4ade80"
+                        android:gravity="center"/>
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="你"
+                    android:textSize="10sp"
+                    android:textColor="#5a5a3a"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="16dp">
+
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="#3a3a15"
+                    android:radius="3dp"
+                    android:layout_marginRight="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="🌲"
+                        android:textSize="14sp"
+                        android:gravity="center"/>
+                </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="#3a2a2a"
+                    android:radius="3dp"
+                    android:layout_marginRight="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="🪨"
+                        android:textSize="14sp"
+                        android:gravity="center"/>
+                </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="#2a3a2a"
+                    android:radius="3dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="🌿"
+                        android:textSize="14sp"
+                        android:gravity="center"/>
+                </FrameLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="#2a2a15">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="8dp">
+
+            <Button
+                android:id="@+id/btnUp"
+                android:layout_width="64dp"
+                android:layout_height="48dp"
+                android:text="▲"
+                android:textSize="18sp"
+                android:textColor="#4ade80"
+                android:background="#3a3a20"
+                android:radius="6dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+
+            <Button
+                android:id="@+id/btnLeft"
+                android:layout_width="64dp"
+                android:layout_height="48dp"
+                android:text="◀"
+                android:textSize="18sp"
+                android:textColor="#4ade80"
+                android:background="#3a3a20"
+                android:radius="6dp"
+                android:layout_marginRight="16dp"/>
+
+            <Button
+                android:id="@+id/btnRight"
+                android:layout_width="64dp"
+                android:layout_height="48dp"
+                android:text="▶"
+                android:textSize="18sp"
+                android:textColor="#4ade80"
+                android:background="#3a3a20"
+                android:radius="6dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnDown"
+                android:layout_width="64dp"
+                android:layout_height="48dp"
+                android:text="▼"
+                android:textSize="18sp"
+                android:textColor="#4ade80"
+                android:background="#3a3a20"
+                android:radius="6dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btnCollect"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="采集"
+                android:textSize="14sp"
+                android:textColor="#1a1a0a"
+                android:background="#4ade80"
+                android:radius="6dp"
+                android:layout_marginRight="8dp"/>
+
+            <Button
+                android:id="@+id/btnEat"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="吃"
+                android:textSize="14sp"
+                android:textColor="#1a1a0a"
+                android:background="#fbbf24"
+                android:radius="6dp"
+                android:layout_marginRight="8dp"/>
+
+            <Button
+                android:id="@+id/btnDrink"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="喝"
+                android:textSize="14sp"
+                android:textColor="#1a1a0a"
+                android:background="#38bdf8"
+                android:radius="6dp"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
