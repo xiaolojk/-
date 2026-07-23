@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lost Blue Sea</string>
+    <string name="title_activity_main">Lost Blue Sea</string>
+    <string name="package_name">com.orgc.lostbluesea</string>
+    <string name="custom_url_scheme">com.orgc.lostbluesea</string>
+</resources>
