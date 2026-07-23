@@ -6,115 +6,117 @@
 <title>Lost Blue Sea - 迷茫蓝海</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#000; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; width:100vw; height:100vh; height:100dvh; }
+body { background:#000; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; width:100vw; height:100vh; height:100dvh; font-family:monospace; }
 canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; }
 #gameContainer { position:relative; width:100%; height:100%; }
 #ui { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
 #ui > * { pointer-events:auto; }
 
-/* Loading Screen */
+/* Loading */
 #loadingScreen { position:absolute; top:0; left:0; width:100%; height:100%; background:#0a1628; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; }
-#loadingScreen .logo { font-size:48px; font-weight:bold; color:#4fc3f7; text-shadow:0 0 20px #4fc3f7; margin-bottom:20px; font-family:monospace; }
-#loadingScreen .subtitle { font-size:14px; color:#78909c; margin-bottom:30px; font-family:monospace; }
+#loadingScreen .logo { font-size:clamp(32px,8vw,48px); font-weight:bold; color:#4fc3f7; text-shadow:0 0 20px #4fc3f7; margin-bottom:20px; }
+#loadingScreen .subtitle { font-size:14px; color:#78909c; margin-bottom:30px; }
 #loadingScreen .progressBar { width:240px; height:6px; background:#1a3a5c; border-radius:3px; overflow:hidden; }
 #loadingScreen .progressFill { height:100%; background:#4fc3f7; width:0%; transition:width 0.3s; }
-#loadingScreen .tip { color:#546e7a; font-size:12px; margin-top:15px; font-family:monospace; }
+#loadingScreen .tip { color:#546e7a; font-size:12px; margin-top:15px; }
 
 /* D-Pad */
 #dpad { position:absolute; bottom:20px; left:20px; width:160px; height:160px; z-index:50; }
-.dpadBtn { position:absolute; width:50px; height:50px; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.3); border-radius:8px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.7); font-size:20px; }
-.dpadBtn:active { background:rgba(255,255,255,0.35); }
-#btnUp { top:0; left:55px; }
-#btnDown { bottom:0; left:55px; }
-#btnLeft { top:55px; left:0; }
-#btnRight { top:55px; right:0; }
+.dpadBtn { position:absolute; width:50px; height:50px; background:rgba(255,255,255,0.12); border:2px solid rgba(255,255,255,0.25); border-radius:10px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.6); font-size:20px; }
+.dpadBtn:active { background:rgba(255,255,255,0.35); border-color:rgba(255,255,255,0.5); }
+#btnUp { top:0; left:55px; } #btnDown { bottom:0; left:55px; }
+#btnLeft { top:55px; left:0; } #btnRight { top:55px; right:0; }
 
 /* Action Buttons */
 #actionBtns { position:absolute; bottom:20px; right:20px; z-index:50; display:flex; flex-direction:column; gap:10px; }
-.actionBtn { width:60px; height:60px; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.3); border-radius:50%; color:rgba(255,255,255,0.8); font-size:12px; font-family:monospace; display:flex; align-items:center; justify-content:center; text-align:center; }
-.actionBtn:active { background:rgba(255,255,255,0.35); }
+.actionBtn { width:62px; height:62px; border-radius:50%; color:rgba(255,255,255,0.9); font-size:13px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; border:2px solid; }
+#btnGather { background:rgba(76,175,80,0.35); border-color:rgba(76,175,80,0.6); }
+#btnGather:active { background:rgba(76,175,80,0.6); }
+#btnMine { background:rgba(255,152,0,0.35); border-color:rgba(255,152,0,0.6); }
+#btnMine:active { background:rgba(255,152,0,0.6); }
+#btnUse { background:rgba(33,150,243,0.35); border-color:rgba(33,150,243,0.6); }
+#btnUse:active { background:rgba(33,150,243,0.6); }
 
-/* Menu Buttons */
-#menuBtns { position:absolute; top:10px; right:10px; z-index:50; display:flex; gap:8px; }
-.menuBtn { padding:8px 14px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.3); border-radius:6px; color:#fff; font-size:12px; font-family:monospace; }
+/* Top Menu */
+#menuBtns { position:absolute; top:10px; right:10px; z-index:50; display:flex; gap:6px; }
+.menuBtn { padding:8px 14px; background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); border-radius:6px; color:#fff; font-size:12px; }
 .menuBtn:active { background:rgba(255,255,255,0.2); }
 
 /* Panels */
-.panel { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.9); border:2px solid #4fc3f7; border-radius:10px; padding:20px; color:#fff; z-index:80; display:none; max-height:80vh; overflow-y:auto; font-family:monospace; min-width:280px; }
-.panel h2 { color:#4fc3f7; margin-bottom:15px; text-align:center; }
-.panel .closeBtn { position:absolute; top:5px; right:10px; color:#f44; font-size:18px; cursor:pointer; background:none; border:none; }
-.panel .item { padding:8px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; }
-.panel .itemName { color:#81d4fa; }
-.panel .craftBtn { background:#2e7d32; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px; }
-.panel .craftBtn:disabled { background:#555; }
+.panel { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.93); border:2px solid #4fc3f7; border-radius:12px; padding:20px; color:#fff; z-index:80; display:none; max-height:80vh; overflow-y:auto; min-width:290px; max-width:92vw; }
+.panel h2 { color:#4fc3f7; margin-bottom:12px; text-align:center; font-size:18px; }
+.panel .closeBtn { position:absolute; top:8px; right:12px; color:#f44; font-size:20px; cursor:pointer; background:none; border:none; }
+.panel .item { padding:8px 4px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.panel .itemName { color:#81d4fa; font-size:13px; }
+.panel .craftBtn { background:#2e7d32; color:#fff; border:none; padding:5px 12px; border-radius:5px; cursor:pointer; font-size:12px; white-space:nowrap; }
+.panel .craftBtn:disabled { background:#444; color:#888; }
+.panel .useBtn { background:#1565c0; color:#fff; border:none; padding:5px 12px; border-radius:5px; cursor:pointer; font-size:12px; white-space:nowrap; margin-left:4px; }
+
+/* Toast */
+#toast { position:absolute; top:60px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:#4fc3f7; padding:10px 20px; border-radius:8px; font-size:13px; z-index:90; display:none; text-align:center; max-width:90%; pointer-events:none; border:1px solid rgba(79,195,247,0.4); }
+
+/* Tutorial Overlay */
+#tutorial { position:absolute; bottom:90px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); border:2px solid #ffd700; color:#ffd700; padding:12px 18px; border-radius:10px; font-size:13px; z-index:85; display:none; text-align:center; max-width:90%; }
+#tutorial .tutBtn { background:#ffd700; color:#000; border:none; padding:8px 20px; border-radius:5px; font-size:13px; font-weight:bold; margin-top:8px; cursor:pointer; }
+
+/* Interact hint */
+#interactHint { position:absolute; bottom:50%; left:50%; transform:translate(-50%,50%); color:#fff; font-size:13px; z-index:40; text-align:center; text-shadow:0 0 8px #000; pointer-events:none; display:none; }
 </style>
 </head>
 <body>
 <div id="gameContainer">
-  <canvas id="gameCanvas"></canvas>
-
-  <!-- Loading Screen -->
-  <div id="loadingScreen">
-    <div class="logo">LOST BLUE SEA</div>
-    <div class="subtitle">迷茫蓝海 · Orgc 出品</div>
-    <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
-    <div class="tip" id="loadingTip">加载中...</div>
-  </div>
-
-  <!-- D-Pad -->
-  <div id="dpad" style="display:none">
-    <button class="dpadBtn" id="btnUp">▲</button>
-    <button class="dpadBtn" id="btnDown">▼</button>
-    <button class="dpadBtn" id="btnLeft">◀</button>
-    <button class="dpadBtn" id="btnRight">▶</button>
-  </div>
-
-  <!-- Action Buttons -->
-  <div id="actionBtns" style="display:none">
-    <button class="actionBtn" id="btnGather">采集</button>
-    <button class="actionBtn" id="btnMine">挖掘</button>
-  </div>
-
-  <!-- Menu Buttons -->
-  <div id="menuBtns" style="display:none">
-    <button class="menuBtn" id="btnInventory">背包</button>
-    <button class="menuBtn" id="btnCraft">制作</button>
-    <button class="menuBtn" id="btnMenu">菜单</button>
-  </div>
-
-  <!-- Inventory Panel -->
-  <div class="panel" id="inventoryPanel">
-    <button class="closeBtn" onclick="closePanel('inventoryPanel')">✕</button>
-    <h2>背包</h2>
-    <div id="inventoryList"></div>
-  </div>
-
-  <!-- Crafting Panel -->
-  <div class="panel" id="craftPanel">
-    <button class="closeBtn" onclick="closePanel('craftPanel')">✕</button>
-    <h2>制作</h2>
-    <div id="craftList"></div>
-  </div>
-
-  <!-- Pause Menu -->
-  <div class="panel" id="pausePanel">
-    <h2>暂停</h2>
-    <button class="menuBtn" onclick="resumeGame()" style="display:block;width:100%;margin:10px 0;padding:10px;font-size:14px;">继续游戏</button>
-    <button class="menuBtn" onclick="saveGame()" style="display:block;width:100%;margin:10px 0;padding:10px;font-size:14px;">保存游戏</button>
-    <button class="menuBtn" onclick="location.reload()" style="display:block;width:100%;margin:10px 0;padding:10px;font-size:14px;">返回主菜单</button>
-  </div>
-
-  <!-- Main Menu -->
-  <div class="panel" id="mainMenuPanel" style="display:flex;flex-direction:column;align-items:center;">
-    <h2 style="font-size:24px;">LOST BLUE SEA</h2>
-    <p style="color:#78909c;margin-bottom:20px;">迷茫蓝海 · Orgc</p>
-    <button class="menuBtn" onclick="startGame()" style="display:block;width:200px;margin:8px 0;padding:12px;font-size:16px;">开始游戏</button>
-    <button class="menuBtn" onclick="loadGame()" style="display:block;width:200px;margin:8px 0;padding:12px;font-size:16px;">继续游戏</button>
-    <p style="color:#546e7a;font-size:10px;margin-top:20px;">v1.0 · Android 10+</p>
-  </div>
-
-  <!-- Story Clue Toast -->
-  <div id="clueToast" style="position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(79,195,247,0.9);color:#000;padding:10px 20px;border-radius:8px;font-family:monospace;font-size:13px;z-index:90;display:none;text-align:center;max-width:90%;"></div>
+<canvas id="gameCanvas"></canvas>
+<div id="loadingScreen">
+  <div class="logo">LOST BLUE SEA</div>
+  <div class="subtitle">迷茫蓝海 · Orgc 出品</div>
+  <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
+  <div class="tip" id="loadingTip">加载中...</div>
+</div>
+<div id="dpad" style="display:none">
+  <button class="dpadBtn" id="btnUp">▲</button>
+  <button class="dpadBtn" id="btnDown">▼</button>
+  <button class="dpadBtn" id="btnLeft">◀</button>
+  <button class="dpadBtn" id="btnRight">▶</button>
+</div>
+<div id="actionBtns" style="display:none">
+  <button class="actionBtn" id="btnGather">采集</button>
+  <button class="actionBtn" id="btnMine">挖掘</button>
+  <button class="actionBtn" id="btnUse">使用</button>
+</div>
+<div id="menuBtns" style="display:none">
+  <button class="menuBtn" id="btnInventory">背包</button>
+  <button class="menuBtn" id="btnCraft">制作</button>
+  <button class="menuBtn" id="btnMenu">菜单</button>
+</div>
+<div class="panel" id="inventoryPanel">
+  <button class="closeBtn" onclick="closePanel('inventoryPanel')">✕</button>
+  <h2>背包</h2>
+  <div id="inventoryList"></div>
+</div>
+<div class="panel" id="craftPanel">
+  <button class="closeBtn" onclick="closePanel('craftPanel')">✕</button>
+  <h2>制作</h2>
+  <div id="craftList"></div>
+</div>
+<div class="panel" id="pausePanel">
+  <h2>暂停</h2>
+  <button class="menuBtn" onclick="resumeGame()" style="display:block;width:100%;margin:8px 0;padding:10px;font-size:14px;">继续游戏</button>
+  <button class="menuBtn" onclick="saveGame()" style="display:block;width:100%;margin:8px 0;padding:10px;font-size:14px;">保存游戏</button>
+  <button class="menuBtn" onclick="location.reload()" style="display:block;width:100%;margin:8px 0;padding:10px;font-size:14px;">返回主菜单</button>
+</div>
+<div class="panel" id="mainMenuPanel" style="display:flex;flex-direction:column;align-items:center;">
+  <h2 style="font-size:24px;">LOST BLUE SEA</h2>
+  <p style="color:#78909c;margin-bottom:20px;">迷茫蓝海 · Orgc</p>
+  <button class="menuBtn" onclick="startGame()" style="display:block;width:200px;margin:6px 0;padding:12px;font-size:15px;">开始游戏</button>
+  <button class="menuBtn" onclick="loadGame()" style="display:block;width:200px;margin:6px 0;padding:12px;font-size:15px;">继续游戏</button>
+  <p style="color:#546e7a;font-size:10px;margin-top:16px;">v2.0 · Android 10+</p>
+</div>
+<div id="toast"></div>
+<div id="tutorial">
+  <div id="tutorialText"></div>
+  <button class="tutBtn" id="tutorialBtn" onclick="nextTutorial()">知道了</button>
+</div>
+<div id="interactHint"></div>
 </div>
 
 <script>
@@ -127,57 +129,79 @@ let W, H, TILE = 32;
 let gameState = 'loading';
 let gameTime = 0;
 let cameraX = 0, cameraY = 0;
-
-// Input
 const keys = {};
 let moveDir = {x:0, y:0};
 
-// Game Data
-const WORLD_W = 80, WORLD_H = 60;
-const GROUND_Y = 30;
-const ISLAND_CENTER = 35;
-const ISLAND_RADIUS = 18;
+const WORLD_W = 120, WORLD_H = 80;
+const GROUND_Y = 42;
+const ISLAND_CX = 55;
+const ISLAND_RADIUS = 35;
 
 let worldTiles = [];
 let player = null;
 let inventory = {};
 let clues = [];
 let discoveredClues = [];
-let entities = [];
 let particles = [];
 let dayNight = 0;
+let interactHint = '';
+let interactHintTimer = 0;
+let tutorialStep = 0;
+let tutorialShown = false;
 
-// Crafting Recipes
+// ==================== ITEMS & RECIPES ====================
+const ITEM_NAMES = {
+  wood:'木材', stone:'石头', wood_plank:'木板', stick:'木棍',
+  shovel:'铲子', pickaxe:'镐子', ladder:'梯子', mine_entrance:'矿井入口',
+  raft:'木筏', rad_suit:'防辐射服', campfire:'篝火', water_filter:'净水器',
+  bandage:'绷带', berry:'浆果', cooked_berry:'熟浆果', fresh_water:'淡水',
+  purified_water:'纯净水', iron_ore:'铁矿', gold_ore:'金矿', coal:'煤矿',
+  iron_ingot:'铁锭', iron_pickaxe:'铁镐', iron_shovel:'铁铲',
+};
+
+const USABLE_ITEMS = {
+  berry: {hunger:15, msg:'吃下浆果，饥饿+15'},
+  cooked_berry: {hunger:35, msg:'吃下熟浆果，饥饿+35'},
+  fresh_water: {thirst:20, msg:'喝下淡水，口渴+20'},
+  purified_water: {thirst:50, msg:'喝下纯净水，口渴+50'},
+  bandage: {hp:25, msg:'使用绷带，HP+25'},
+};
+
 const RECIPES = [
-  {id:'wood_plank', name:'木板', icon:'🪵', req:{wood:1}, give:{wood_plank:4}},
-  {id:'stick', name:'木棍', icon:'🥢', req:{wood_plank:1}, give:{stick:4}},
-  {id:'shovel', name:'铲子', icon:'🔧', req:{stick:2, wood_plank:1}, give:{shovel:1}},
-  {id:'pickaxe', name:'镐子', icon:'⛏️', req:{stick:2, wood_plank:2, stone:1}, give:{pickaxe:1}},
-  {id:'ladder', name:'梯子', icon:'🪜', req:{stick:4, wood_plank:2}, give:{ladder:1}},
-  {id:'mine_entrance', name:'矿井入口', icon:'🕳️', req:{stick:4, wood_plank:4, shovel:1}, give:{mine_entrance:1}},
-  {id:'raft', name:'木筏', icon:'🛶', req:{wood_plank:6, stick:4}, give:{raft:1}},
-  {id:'rad_suit', name:'防辐射服', icon:'🥼', req:{wood_plank:4, stone:2, stick:2}, give:{rad_suit:1}},
-  {id:'campfire', name:'篝火', icon:'🔥', req:{stick:4, wood_plank:2, stone:1}, give:{campfire:1}},
-  {id:'water_filter', name:'净水器', icon:'💧', req:{stone:3, wood_plank:2, stick:2}, give:{water_filter:1}},
-  {id:'bandage', name:'绷带', icon:'🩹', req:{stick:1, wood_plank:1}, give:{bandage:1}},
+  {id:'wood_plank', name:'木板', icon:'🪵', req:{wood:1}, give:{wood_plank:4}, tier:0},
+  {id:'stick', name:'木棍', icon:'🥢', req:{wood_plank:1}, give:{stick:4}, tier:0},
+  {id:'campfire', name:'篝火', icon:'🔥', req:{stick:4, wood_plank:2, stone:1}, give:{campfire:1}, tier:0},
+  {id:'bandage', name:'绷带', icon:'🩹', req:{stick:1, wood_plank:1}, give:{bandage:1}, tier:0},
+  {id:'shovel', name:'铲子', icon:'🔧', req:{stick:2, wood_plank:1}, give:{shovel:1}, tier:0},
+  {id:'pickaxe', name:'镐子', icon:'⛏️', req:{stick:2, wood_plank:2, stone:1}, give:{pickaxe:1}, tier:1},
+  {id:'ladder', name:'梯子', icon:'🪜', req:{stick:4, wood_plank:2}, give:{ladder:1}, tier:1},
+  {id:'mine_entrance', name:'矿井入口', icon:'🕳️', req:{stick:4, wood_plank:4, shovel:1}, give:{mine_entrance:1}, tier:1},
+  {id:'water_filter', name:'净水器', icon:'💧', req:{stone:3, wood_plank:2, stick:2}, give:{water_filter:1}, tier:1},
+  {id:'raft', name:'木筏', icon:'🛶', req:{wood_plank:6, stick:4}, give:{raft:1}, tier:1},
+  {id:'rad_suit', name:'防辐射服', icon:'🥼', req:{wood_plank:4, stone:2, stick:2}, give:{rad_suit:1}, tier:1},
+  {id:'cooked_berry', name:'熟浆果', icon:'🍇', req:{berry:3, campfire:1}, give:{cooked_berry:1}, tier:1},
+  {id:'purified_water', name:'纯净水', icon:'💎', req:{fresh_water:3, water_filter:1}, give:{purified_water:1}, tier:1},
+  {id:'iron_ingot', name:'铁锭', icon:'🪨', req:{iron_ore:3, campfire:1, coal:1}, give:{iron_ingot:1}, tier:2},
+  {id:'iron_pickaxe', name:'铁镐', icon:'⚒️', req:{iron_ingot:2, stick:2, wood_plank:1}, give:{iron_pickaxe:1}, tier:2},
+  {id:'iron_shovel', name:'铁铲', icon:'🪏', req:{iron_ingot:1, stick:2, wood_plank:1}, give:{iron_shovel:1}, tier:2},
 ];
 
 const CLUE_DATA = [
-  {id:0, x:30, y:25, text:'一张泛黄的纸条："核电站...泄漏...疏散..."'},
-  {id:1, x:40, y:28, text:'破旧的收音机传出杂音："这里是...最后的...广播..."'},
-  {id:2, x:25, y:32, text:'一块金属牌："北极冰川监测站 - 2047"'},
-  {id:3, x:45, y:35, text:'褪色的日记："海平面上升了70米，一切都没了..."'},
-  {id:4, x:35, y:20, text:'墙上涂鸦："寻找方舟计划"'},
-  {id:5, x:50, y:30, text:'一具骸骨旁的字条："不要喝海水..."'},
-  {id:6, x:28, y:38, text:'地图碎片标记了地下避难所位置'},
-  {id:7, x:42, y:22, text:'实验室报告："辐射变异样本已失控"'},
-  {id:8, x:33, y:40, text:'一封未寄出的信："亲爱的，如果你看到这个..."'},
-  {id:9, x:38, y:18, text:'GPS设备显示："最近陆地：3742公里"'},
-  {id:10, x:22, y:27, text:'科学笔记："反向渗透...也许能净化海水..."'},
-  {id:11, x:48, y:38, text:'破船上的日志："第87天，淡水耗尽..."'},
-  {id:12, x:36, y:45, text:'地下室的蓝图："矿井系统设计图"'},
-  {id:13, x:44, y:42, text:'军方文件："Operation Ark - 最高机密"'},
-  {id:14, x:31, y:22, text:'你找到一面镜子，上面写着："记住你是谁"'},
+  {id:0, x:48, y:36, text:'一张泛黄的纸条："核电站...泄漏...疏散..."'},
+  {id:1, x:62, y:40, text:'破旧的收音机："这里是...最后的...广播..."'},
+  {id:2, x:38, y:44, text:'金属牌："北极冰川监测站 - 2047"'},
+  {id:3, x:68, y:48, text:'褪色的日记："海平面上升了70米..."'},
+  {id:4, x:52, y:30, text:'墙上涂鸦："寻找方舟计划"'},
+  {id:5, x:72, y:42, text:'骸骨旁的字条："不要喝海水..."'},
+  {id:6, x:42, y:50, text:'地图碎片标记了地下避难所位置'},
+  {id:7, x:65, y:33, text:'实验室报告："辐射变异样本已失控"'},
+  {id:8, x:50, y:52, text:'一封未寄出的信："亲爱的..."'},
+  {id:9, x:58, y:28, text:'GPS显示："最近陆地：3742公里"'},
+  {id:10, x:36, y:39, text:'科学笔记："反向渗透...能净化海水..."'},
+  {id:11, x:70, y:50, text:'破船日志："第87天，淡水耗尽..."'},
+  {id:12, x:54, y:55, text:'地下室蓝图："矿井系统设计图"'},
+  {id:13, x:66, y:54, text:'军方文件："Operation Ark - 最高机密"'},
+  {id:14, x:45, y:34, text:'镜子上的字："记住你是谁"'},
 ];
 
 // ==================== WORLD GENERATION ====================
@@ -186,18 +210,13 @@ function generateWorld() {
   for (let y = 0; y < WORLD_H; y++) {
     worldTiles[y] = [];
     for (let x = 0; x < WORLD_W; x++) {
-      let dx = x - ISLAND_CENTER;
+      let dx = x - ISLAND_CX;
       let dy = y - GROUND_Y;
       let dist = Math.sqrt(dx*dx + dy*dy*0.5);
-      
       if (dist < ISLAND_RADIUS) {
-        if (y > GROUND_Y + 2) {
-          worldTiles[y][x] = 'dirt';
-        } else if (y > GROUND_Y) {
-          worldTiles[y][x] = 'grass';
-        } else {
-          worldTiles[y][x] = 'air';
-        }
+        if (y > GROUND_Y + 3) worldTiles[y][x] = 'dirt';
+        else if (y > GROUND_Y) worldTiles[y][x] = 'grass';
+        else worldTiles[y][x] = 'air';
       } else if (dist < ISLAND_RADIUS + 5) {
         worldTiles[y][x] = 'water';
       } else {
@@ -205,23 +224,39 @@ function generateWorld() {
       }
     }
   }
-  // Add some resources
-  for (let i = 0; i < 15; i++) {
-    let rx = ISLAND_CENTER + Math.floor(Math.random()*ISLAND_RADIUS*2) - ISLAND_RADIUS;
-    let ry = GROUND_Y - Math.floor(Math.random()*3);
-    if (rx >= 0 && rx < WORLD_W && ry >= 0 && ry < WORLD_H && worldTiles[ry][rx] === 'grass') {
-      worldTiles[ry][rx] = 'tree';
+  // Resources on grass - much denser
+  for (let y = 0; y < WORLD_H; y++) {
+    for (let x = 0; x < WORLD_W; x++) {
+      if (worldTiles[y][x] !== 'grass') continue;
+      let dx = Math.abs(x - ISLAND_CX);
+      let dy = Math.abs(y - GROUND_Y);
+      let r = Math.random();
+      if (dx < 4 && dy < 2) continue; // spawn area
+      if (r < 0.22) worldTiles[y][x] = 'tree';
+      else if (r < 0.32) worldTiles[y][x] = 'stone_ore';
+      else if (r < 0.38) worldTiles[y][x] = 'berry_bush';
+      else if (r < 0.41) worldTiles[y][x] = 'iron_ore';
+      else if (r < 0.43) worldTiles[y][x] = 'coal_ore';
     }
   }
-  for (let i = 0; i < 10; i++) {
-    let rx = ISLAND_CENTER + Math.floor(Math.random()*ISLAND_RADIUS*2) - ISLAND_RADIUS;
-    let ry = GROUND_Y - Math.floor(Math.random()*3);
-    if (rx >= 0 && rx < WORLD_W && ry >= 0 && ry < WORLD_H && worldTiles[ry][rx] === 'grass') {
-      worldTiles[ry][rx] = 'stone_ore';
-    }
+  // Surface gold (rare)
+  for (let i = 0; i < 8; i++) {
+    let rx = ISLAND_CX + Math.floor(Math.random()*ISLAND_RADIUS*1.6) - ISLAND_RADIUS*0.8;
+    let ry = GROUND_Y - Math.floor(Math.random()*5);
+    if (rx>0 && rx<WORLD_W && ry>0 && ry<WORLD_H && worldTiles[ry][rx]==='grass')
+      worldTiles[ry][rx] = 'gold_ore';
   }
-  // Cave entrance
-  worldTiles[GROUND_Y][ISLAND_CENTER + 5] = 'cave';
+  // Fresh water pools
+  for (let i = 0; i < 8; i++) {
+    let rx = ISLAND_CX + Math.floor(Math.random()*ISLAND_RADIUS*1.6) - ISLAND_RADIUS*0.8;
+    let ry = GROUND_Y - Math.floor(Math.random()*4);
+    if (rx>0 && rx<WORLD_W && ry>0 && ry<WORLD_H && worldTiles[ry][rx]==='grass')
+      worldTiles[ry][rx] = 'fresh_water';
+  }
+  // Cave entrances
+  worldTiles[GROUND_Y][ISLAND_CX - 10] = 'cave';
+  worldTiles[GROUND_Y][ISLAND_CX + 12] = 'cave';
+  worldTiles[GROUND_Y][ISLAND_CX + 2] = 'cave';
   // Clues
   clues = CLUE_DATA.map(c => ({...c, discovered:false}));
 }
@@ -229,23 +264,12 @@ function generateWorld() {
 // ==================== PLAYER ====================
 function createPlayer() {
   return {
-    x: ISLAND_CENTER * TILE + TILE/2,
-    y: (GROUND_Y - 1) * TILE,
-    vx: 0, vy: 0,
-    w: 20, h: 28,
-    speed: 3,
-    hp: 100, maxHp: 100,
-    hunger: 100, maxHunger: 100,
-    thirst: 100, maxThirst: 100,
-    radiation: 0, maxRadiation: 100,
-    depth: 0,
-    hasRaft: false,
-    hasRadSuit: false,
-    inWater: false,
-    invincibleTimer: 0,
-    animFrame: 0,
-    animTimer: 0,
-    facing: 0,
+    x: ISLAND_CX * TILE + TILE/2, y: (GROUND_Y - 1) * TILE,
+    vx:0, vy:0, w:20, h:28, speed:3.5,
+    hp:100, maxHp:100, hunger:100, maxHunger:100,
+    thirst:100, maxThirst:100, radiation:0, maxRadiation:100,
+    depth:0, hasRaft:false, hasRadSuit:false, inWater:false,
+    invincibleTimer:0, animFrame:0, animTimer:0, facing:0,
   };
 }
 
@@ -256,49 +280,28 @@ function init() {
   player = createPlayer();
   inventory = {};
   discoveredClues = [];
-  entities = [];
   particles = [];
-  dayNight = 0;
-  gameTime = 0;
-  cameraX = player.x - W/2;
-  cameraY = player.y - H/2;
+  dayNight = 0; gameTime = 0;
+  tutorialStep = 0; tutorialShown = false;
+  cameraX = player.x - W/2; cameraY = player.y - H/2;
 }
 
 function resizeCanvas() {
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width = W;
-  canvas.height = H;
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W; canvas.height = H;
 }
 
 // ==================== LOADING ====================
 function simulateLoading() {
   let progress = 0;
-  const tips = [
-    '冰川融化后，世界变成了一片汪洋...',
-    '核泄漏污染了每一滴海水...',
-    '你在一个孤岛上醒来，失去了所有记忆...',
-    '寻找线索，揭开真相...',
-    '活下去，是唯一的目标...',
-  ];
+  const tips = ['冰川融化后，世界变成了一片汪洋...','核泄漏污染了每一滴海水...','你在一个孤岛上醒来，失去了所有记忆...','寻找线索，揭开真相...','活下去，是唯一的目标...'];
   const fill = document.getElementById('progressFill');
   const tip = document.getElementById('loadingTip');
-  
   const interval = setInterval(() => {
     progress += Math.random() * 15;
-    if (progress >= 100) {
-      progress = 100;
-      clearInterval(interval);
-      fill.style.width = '100%';
-      tip.textContent = '加载完成！';
-      setTimeout(() => {
-        document.getElementById('loadingScreen').style.display = 'none';
-        showMainMenu();
-      }, 500);
-    } else {
-      fill.style.width = progress + '%';
-      tip.textContent = tips[Math.floor(progress / 20) % tips.length];
-    }
+    if (progress >= 100) { progress = 100; clearInterval(interval); fill.style.width = '100%'; tip.textContent = '加载完成！';
+      setTimeout(() => { document.getElementById('loadingScreen').style.display = 'none'; showMainMenu(); }, 500);
+    } else { fill.style.width = progress + '%'; tip.textContent = tips[Math.floor(progress/20)%tips.length]; }
   }, 200);
 }
 
@@ -310,560 +313,581 @@ function showMainMenu() {
   document.getElementById('menuBtns').style.display = 'none';
 }
 
-// ==================== GAME START ====================
 function startGame() {
-  init();
-  gameState = 'playing';
+  init(); gameState = 'playing';
   document.getElementById('mainMenuPanel').style.display = 'none';
   document.getElementById('dpad').style.display = 'block';
   document.getElementById('actionBtns').style.display = 'flex';
   document.getElementById('menuBtns').style.display = 'flex';
+  showToast('你在孤岛上醒来...四处走走，寻找资源');
+  startTutorial();
   gameLoop();
 }
 
-function resumeGame() {
-  gameState = 'playing';
-  document.getElementById('pausePanel').style.display = 'none';
-}
-
+function resumeGame() { gameState = 'playing'; document.getElementById('pausePanel').style.display = 'none'; }
 function saveGame() {
-  const data = {
-    player: {...player},
-    inventory: {...inventory},
-    discoveredClues: [...discoveredClues],
-    gameTime,
-    dayNight,
-  };
-  localStorage.setItem('lostbluesea_save', JSON.stringify(data));
-  showToast('游戏已保存！');
-  closePanel('pausePanel');
-  gameState = 'playing';
+  localStorage.setItem('lostbluesea_save', JSON.stringify({
+    player:{...player}, inventory:{...inventory}, discoveredClues:[...discoveredClues], gameTime, dayNight, tutorialShown
+  }));
+  showToast('游戏已保存！'); closePanel('pausePanel'); gameState = 'playing';
 }
-
 function loadGame() {
   const saved = localStorage.getItem('lostbluesea_save');
-  if (!saved) {
-    showToast('没有存档！');
-    return;
-  }
-  const data = JSON.parse(saved);
-  init();
-  Object.assign(player, data.player);
-  inventory = data.inventory;
-  discoveredClues = data.discoveredClues;
-  gameTime = data.gameTime;
-  dayNight = data.dayNight;
+  if (!saved) { showToast('没有存档！'); return; }
+  const data = JSON.parse(saved); init();
+  Object.assign(player, data.player); inventory = data.inventory;
+  discoveredClues = data.discoveredClues; gameTime = data.gameTime; dayNight = data.dayNight;
+  tutorialShown = data.tutorialShown || false;
   gameState = 'playing';
   document.getElementById('mainMenuPanel').style.display = 'none';
   document.getElementById('dpad').style.display = 'block';
   document.getElementById('actionBtns').style.display = 'flex';
   document.getElementById('menuBtns').style.display = 'flex';
   gameLoop();
+}
+
+// ==================== TUTORIAL ====================
+const TUTORIAL_STEPS = [
+  '🎮 使用左下角方向键移动角色',
+  '🌲 走到树木旁，点击右下角[采集]按钮获取木材',
+  '🪨 走到石头旁，点击[采集]或[挖掘]获取石头',
+  '🔧 点击右上角[制作]，用木材制作木板，再用木板做木棍',
+  '⛏️ 制作镐子（需要木棍x2+木板x2+石头x1），然后挖掘矿脉',
+  '🫐 采集浆果丛和淡水补充饥饿和口渴',
+  '🕳️ 探索洞穴，找到线索，揭开真相！',
+];
+
+function startTutorial() {
+  if (tutorialShown) return;
+  tutorialStep = 0;
+  showTutorialStep();
+}
+function showTutorialStep() {
+  if (tutorialStep >= TUTORIAL_STEPS.length) {
+    document.getElementById('tutorial').style.display = 'none';
+    tutorialShown = true;
+    return;
+  }
+  document.getElementById('tutorialText').textContent = TUTORIAL_STEPS[tutorialStep];
+  document.getElementById('tutorial').style.display = 'block';
+}
+function nextTutorial() {
+  tutorialStep++;
+  showTutorialStep();
 }
 
 // ==================== GAME LOOP ====================
 let lastTime = 0;
 function gameLoop(timestamp) {
-  if (gameState !== 'playing') {
-    requestAnimationFrame(gameLoop);
-    return;
-  }
+  if (gameState !== 'playing') { requestAnimationFrame(gameLoop); return; }
   if (!lastTime) lastTime = timestamp;
   let dt = Math.min((timestamp - lastTime) / 1000, 0.1);
   lastTime = timestamp;
-  
   gameTime += dt;
   update(dt);
   render();
-  
   requestAnimationFrame(gameLoop);
 }
 
 // ==================== UPDATE ====================
 function update(dt) {
-  // Player movement
   player.vx = moveDir.x * player.speed;
   player.vy = moveDir.y * player.speed;
-  
-  // Water slowdown
-  let tx = Math.floor(player.x / TILE);
-  let ty = Math.floor(player.y / TILE);
-  if (tx >= 0 && tx < WORLD_W && ty >= 0 && ty < WORLD_H) {
+  let tx = Math.floor(player.x / TILE), ty = Math.floor(player.y / TILE);
+  if (tx>=0 && tx<WORLD_W && ty>=0 && ty<WORLD_H) {
     let tile = worldTiles[ty][tx];
-    if (tile === 'water' || tile === 'deep_water') {
-      player.vx *= 0.4;
-      player.vy *= 0.4;
-      player.inWater = true;
-    } else {
-      player.inWater = false;
-    }
+    player.inWater = (tile==='water'||tile==='deep_water');
+    if (player.inWater) { player.vx*=0.4; player.vy*=0.4; }
   }
-  
-  player.x += player.vx;
-  player.y += player.vy;
-  
-  // Clamp to world
-  player.x = Math.max(TILE/2, Math.min(WORLD_W * TILE - TILE/2, player.x));
-  player.y = Math.max(0, Math.min(WORLD_H * TILE - TILE/2, player.y));
-  
+  player.x += player.vx; player.y += player.vy;
+  player.x = Math.max(TILE/2, Math.min(WORLD_W*TILE-TILE/2, player.x));
+  player.y = Math.max(0, Math.min(WORLD_H*TILE-TILE/2, player.y));
+
   // Radiation
   if (player.inWater) {
-    let radRate = player.hasRadSuit ? 2 : 8;
-    player.radiation = Math.min(player.maxRadiation, player.radiation + radRate * dt);
+    player.radiation = Math.min(player.maxRadiation, player.radiation + (player.hasRadSuit?2:8)*dt);
   } else {
-    player.radiation = Math.max(0, player.radiation - 2 * dt);
+    player.radiation = Math.max(0, player.radiation - 2*dt);
   }
-  
-  if (player.radiation >= player.maxRadiation) {
-    player.hp -= 5 * dt;
-  }
-  
+  if (player.radiation >= player.maxRadiation) player.hp -= 5*dt;
+
   // Hunger & Thirst
-  player.hunger = Math.max(0, player.hunger - 1.5 * dt);
-  player.thirst = Math.max(0, player.thirst - 2 * dt);
-  if (player.hunger <= 0) player.hp -= 3 * dt;
-  if (player.thirst <= 0) player.hp -= 5 * dt;
-  
-  // Invincibility
+  player.hunger = Math.max(0, player.hunger - 1.5*dt);
+  player.thirst = Math.max(0, player.thirst - 2*dt);
+  if (player.hunger <= 0) player.hp -= 3*dt;
+  if (player.thirst <= 0) player.hp -= 5*dt;
   if (player.invincibleTimer > 0) player.invincibleTimer -= dt;
-  
-  // Day/Night
-  dayNight = (Math.sin(gameTime * 0.1) + 1) / 2;
-  
-  // Animation
+
+  dayNight = (Math.sin(gameTime*0.1)+1)/2;
   player.animTimer += dt;
-  if (player.animTimer > 0.2) {
-    player.animTimer = 0;
-    player.animFrame = (player.animFrame + 1) % 4;
-  }
-  
-  // Check clues
+  if (player.animTimer > 0.2) { player.animTimer=0; player.animFrame=(player.animFrame+1)%4; }
+
+  // Clues
   for (let clue of clues) {
     if (clue.discovered) continue;
-    let dx = player.x - clue.x * TILE;
-    let dy = player.y - clue.y * TILE;
-    if (Math.sqrt(dx*dx + dy*dy) < TILE * 1.5) {
-      clue.discovered = true;
-      discoveredClues.push(clue);
+    let dx = player.x - clue.x*TILE, dy = player.y - clue.y*TILE;
+    if (Math.sqrt(dx*dx+dy*dy) < TILE*1.5) {
+      clue.discovered = true; discoveredClues.push(clue);
       showToast('🔍 ' + clue.text);
     }
   }
-  
-  // Camera
-  let targetCX = player.x - W/2;
-  let targetCY = player.y - H/2;
-  cameraX += (targetCX - cameraX) * 0.1;
-  cameraY += (targetCY - cameraY) * 0.1;
-  
-  // Death
-  if (player.hp <= 0) {
-    showToast('你死了...重新开始');
-    init();
+
+  // Interaction hint
+  interactHintTimer -= dt;
+  if (interactHintTimer <= 0) {
+    interactHint = ''; interactHintTimer = 0;
+    let tile = (tx>=0&&tx<WORLD_W&&ty>=0&&ty<WORLD_H) ? worldTiles[ty][tx] : null;
+    if (tile === 'tree') { interactHint = '🌲 [采集]木材'; interactHintTimer = 0.5; }
+    else if (tile === 'stone_ore') { interactHint = '🪨 [采集/挖掘]石头'; interactHintTimer = 0.5; }
+    else if (tile === 'iron_ore') { interactHint = '🔩 [挖掘]铁矿'; interactHintTimer = 0.5; }
+    else if (tile === 'coal_ore') { interactHint = '⬛ [挖掘]煤矿'; interactHintTimer = 0.5; }
+    else if (tile === 'gold_ore') { interactHint = '✨ [挖掘]金矿'; interactHintTimer = 0.5; }
+    else if (tile === 'berry_bush') { interactHint = '🫐 [采集]浆果'; interactHintTimer = 0.5; }
+    else if (tile === 'fresh_water') { interactHint = '💧 [采集]淡水'; interactHintTimer = 0.5; }
+    else if (tile === 'cave') { interactHint = '🕳️ [挖掘]进入洞穴'; interactHintTimer = 0.5; }
+    else if (tile === 'dirt') { interactHint = '🟫 [挖掘]挖土'; interactHintTimer = 0.5; }
   }
+
+  // Particles
+  for (let i = particles.length-1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Camera
+  let tcx = player.x - W/2, tcy = player.y - H/2;
+  cameraX += (tcx - cameraX)*0.1; cameraY += (tcy - cameraY)*0.1;
+
+  if (player.hp <= 0) { showToast('你死了...重新开始'); init(); }
 }
 
 // ==================== RENDER ====================
 function render() {
-  // Sky gradient
-  let skyTop = dayNight < 0.5 ? '#0a1628' : '#4fc3f7';
-  let skyBot = dayNight < 0.5 ? '#1a3a5c' : '#81d4fa';
-  let grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, skyTop);
-  grad.addColorStop(1, skyBot);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-  
-  // Stars at night
+  let skyTop = dayNight<0.5?'#0a1628':'#4fc3f7', skyBot = dayNight<0.5?'#1a3a5c':'#81d4fa';
+  let grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,skyTop); grad.addColorStop(1,skyBot);
+  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
   if (dayNight < 0.3) {
     ctx.fillStyle = '#fff';
-    for (let i = 0; i < 50; i++) {
-      let sx = ((i * 7919 + 123) % W);
-      let sy = ((i * 6271 + 456) % (H * 0.5));
-      ctx.fillRect(sx, sy, 1, 1);
+    for (let i=0;i<50;i++) {
+      let sx=((i*7919+123)%W), sy=((i*6271+456)%(H*0.5));
+      ctx.fillRect(sx,sy,1,1);
     }
   }
-  
-  ctx.save();
-  ctx.translate(-cameraX, -cameraY);
-  
-  // Draw world
-  let startX = Math.max(0, Math.floor(cameraX / TILE) - 1);
-  let startY = Math.max(0, Math.floor(cameraY / TILE) - 1);
-  let endX = Math.min(WORLD_W, Math.ceil((cameraX + W) / TILE) + 1);
-  let endY = Math.min(WORLD_H, Math.ceil((cameraY + H) / TILE) + 1);
-  
-  for (let y = startY; y < endY; y++) {
-    for (let x = startX; x < endX; x++) {
-      let tile = worldTiles[y][x];
-      let px = x * TILE, py = y * TILE;
-      
+
+  ctx.save(); ctx.translate(-cameraX, -cameraY);
+
+  let sx = Math.max(0,Math.floor(cameraX/TILE)-1), sy = Math.max(0,Math.floor(cameraY/TILE)-1);
+  let ex = Math.min(WORLD_W,Math.ceil((cameraX+W)/TILE)+1), ey = Math.min(WORLD_H,Math.ceil((cameraY+H)/TILE)+1);
+
+  for (let y=sy; y<ey; y++) {
+    for (let x=sx; x<ex; x++) {
+      let tile = worldTiles[y][x], px=x*TILE, py=y*TILE;
       switch(tile) {
-        case 'grass':
-          ctx.fillStyle = '#4a7c3f';
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = '#5a9c4f';
-          ctx.fillRect(px+2, py+2, TILE-4, TILE-4);
-          break;
-        case 'dirt':
-          ctx.fillStyle = '#8B6914';
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = '#9B7924';
-          ctx.fillRect(px+2, py+2, TILE-4, TILE-4);
-          break;
-        case 'water':
-          ctx.fillStyle = `rgba(30, 100, 180, ${0.5 + 0.3 * Math.sin(gameTime*3 + x + y)})`;
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = 'rgba(255, 100, 50, 0.15)';
-          ctx.fillRect(px, py, TILE, TILE);
-          break;
-        case 'deep_water':
-          ctx.fillStyle = '#0a2a5a';
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = 'rgba(255, 50, 20, 0.2)';
-          ctx.fillRect(px, py, TILE, TILE);
-          break;
+        case 'grass': ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);ctx.fillStyle='#5a9c4f';ctx.fillRect(px+2,py+2,TILE-4,TILE-4);break;
+        case 'dirt': ctx.fillStyle='#8B6914';ctx.fillRect(px,py,TILE,TILE);ctx.fillStyle='#9B7924';ctx.fillRect(px+2,py+2,TILE-4,TILE-4);break;
+        case 'water': ctx.fillStyle=`rgba(30,100,180,${0.5+0.3*Math.sin(gameTime*3+x+y)})`;ctx.fillRect(px,py,TILE,TILE);ctx.fillStyle='rgba(255,100,50,0.15)';ctx.fillRect(px,py,TILE,TILE);break;
+        case 'deep_water': ctx.fillStyle='#0a2a5a';ctx.fillRect(px,py,TILE,TILE);ctx.fillStyle='rgba(255,50,20,0.2)';ctx.fillRect(px,py,TILE,TILE);break;
         case 'tree':
-          ctx.fillStyle = '#4a7c3f';
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = '#5a3a1a';
-          ctx.fillRect(px+TILE/2-4, py+TILE/4, 8, TILE*3/4);
-          ctx.fillStyle = '#2d5a1e';
-          ctx.beginPath();
-          ctx.arc(px+TILE/2, py+TILE/4, TILE/2, 0, Math.PI*2);
-          ctx.fill();
+          ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);
+          ctx.fillStyle='#5a3a1a';ctx.fillRect(px+TILE/2-3,py+TILE/4,6,TILE*3/4);
+          ctx.fillStyle='#2d5a1e';ctx.beginPath();ctx.arc(px+TILE/2,py+TILE/4,TILE/2.5,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='#3a7a2e';ctx.beginPath();ctx.arc(px+TILE/2-2,py+TILE/5,TILE/3.5,0,Math.PI*2);ctx.fill();
           break;
         case 'stone_ore':
-          ctx.fillStyle = '#4a7c3f';
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = '#888';
-          ctx.fillRect(px+TILE/2-6, py+TILE/2-6, 12, 12);
-          ctx.fillStyle = '#aaa';
-          ctx.fillRect(px+TILE/2-4, py+TILE/2-4, 8, 8);
+          ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);
+          ctx.fillStyle='#888';ctx.fillRect(px+4,py+4,TILE-8,TILE-8);
+          ctx.fillStyle='#aaa';ctx.fillRect(px+6,py+6,TILE-12,TILE-12);
+          ctx.fillStyle='#ccc';ctx.fillRect(px+10,py+10,6,6);
+          break;
+        case 'iron_ore':
+          ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);
+          ctx.fillStyle='#c49a6c';ctx.fillRect(px+4,py+4,TILE-8,TILE-8);
+          ctx.fillStyle='#d4aa7c';ctx.fillRect(px+6,py+6,TILE-12,TILE-12);
+          ctx.strokeStyle='#a07040';ctx.lineWidth=2;ctx.strokeRect(px+8,py+8,TILE-16,TILE-16);
+          break;
+        case 'coal_ore':
+          ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);
+          ctx.fillStyle='#333';ctx.fillRect(px+4,py+4,TILE-8,TILE-8);
+          ctx.fillStyle='#444';ctx.fillRect(px+6,py+6,TILE-12,TILE-12);
+          ctx.fillStyle='#555';ctx.fillRect(px+10,py+10,5,5);
+          break;
+        case 'gold_ore':
+          ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);
+          ctx.fillStyle='#ffd700';ctx.fillRect(px+4,py+4,TILE-8,TILE-8);
+          ctx.fillStyle='#ffec80';ctx.fillRect(px+6,py+6,TILE-12,TILE-12);
+          // Sparkle
+          let sp=Math.sin(gameTime*5+x+y)*0.5+0.5;
+          ctx.fillStyle=`rgba(255,255,200,${sp})`;ctx.fillRect(px+10,py+10,6,6);
+          break;
+        case 'berry_bush':
+          ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);
+          ctx.fillStyle='#2e7d32';ctx.beginPath();ctx.arc(px+TILE/2,py+TILE/2,TILE/3,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='#e91e63';ctx.beginPath();ctx.arc(px+TILE/2-4,py+TILE/2-2,4,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='#e91e63';ctx.beginPath();ctx.arc(px+TILE/2+4,py+TILE/2-2,4,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='#f06292';ctx.beginPath();ctx.arc(px+TILE/2,py+TILE/2+3,8,0,Math.PI*2);ctx.fill();
+          break;
+        case 'fresh_water':
+          ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);
+          ctx.fillStyle='rgba(100,180,255,0.7)';ctx.fillRect(px+4,py+4,TILE-8,TILE-8);
+          ctx.fillStyle='rgba(150,220,255,0.5)';ctx.fillRect(px+6,py+6,TILE-12,TILE-12);
           break;
         case 'cave':
-          ctx.fillStyle = '#4a7c3f';
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = '#1a1a1a';
-          ctx.beginPath();
-          ctx.arc(px+TILE/2, py+TILE/2, TILE/3, 0, Math.PI*2);
-          ctx.fill();
+          ctx.fillStyle='#4a7c3f';ctx.fillRect(px,py,TILE,TILE);
+          ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.arc(px+TILE/2,py+TILE/2,TILE/2.5,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='#0a0a0a';ctx.beginPath();ctx.arc(px+TILE/2,py+TILE/2,TILE/3.5,0,Math.PI*2);ctx.fill();
           break;
       }
     }
   }
-  
-  // Draw clues
+
+  // Clues
   for (let clue of clues) {
     if (clue.discovered) continue;
-    let cx = clue.x * TILE + TILE/2;
-    let cy = clue.y * TILE + TILE/2;
-    let pulse = Math.sin(gameTime * 3) * 0.2 + 0.8;
-    ctx.fillStyle = `rgba(255, 215, 0, ${pulse})`;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 6, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('?', cx, cy+3);
+    let cx=clue.x*TILE+TILE/2, cy=clue.y*TILE+TILE/2;
+    let pulse=Math.sin(gameTime*3)*0.3+0.7;
+    ctx.fillStyle=`rgba(255,215,0,${pulse})`;ctx.beginPath();ctx.arc(cx,cy,7,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 11px monospace';ctx.textAlign='center';ctx.fillText('?',cx,cy+4);
   }
-  
-  // Draw player
-  if (player.invincibleTimer > 0 && Math.floor(player.invincibleTimer * 10) % 2 === 0) {
-    // Skip draw for invincibility blink
-  } else {
-    let px = player.x - player.w/2;
-    let py = player.y - player.h;
-    
-    // Body
-    ctx.fillStyle = '#4a90d9';
-    ctx.fillRect(px + 6, py + 8, 8, 12);
-    // Head
-    ctx.fillStyle = '#ffcc80';
-    ctx.fillRect(px + 5, py + 2, 10, 9);
-    // Eyes
-    ctx.fillStyle = '#000';
-    ctx.fillRect(px + 8, py + 5, 2, 2);
-    ctx.fillRect(px + 12, py + 5, 2, 2);
-    // Scarf (red - memory loss symbol)
-    ctx.fillStyle = '#e53935';
-    ctx.fillRect(px + 4, py + 8, 12, 3);
-    ctx.fillRect(px + 14, py + 8, 3, 6);
-    // Legs
-    let legOff = player.animFrame % 2 === 0 ? 1 : -1;
-    ctx.fillStyle = '#3a3a3a';
-    ctx.fillRect(px + 7, py + 20, 3, 6 + legOff);
-    ctx.fillRect(px + 11, py + 20, 3, 6 - legOff);
-    
-    // Rad suit glow
-    if (player.hasRadSuit) {
-      ctx.strokeStyle = 'rgba(255, 200, 50, 0.5)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(px + 4, py, 14, 28);
-    }
+
+  // Particles
+  for (let p of particles) {
+    let alpha = p.life / p.maxLife;
+    ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${alpha})`;
+    ctx.fillRect(p.x-2, p.y-2, 4, 4);
   }
-  
+
+  // Player
+  if (!(player.invincibleTimer>0 && Math.floor(player.invincibleTimer*10)%2===0)) {
+    let px=player.x-player.w/2, py=player.y-player.h;
+    ctx.fillStyle='#4a90d9';ctx.fillRect(px+6,py+8,8,12);
+    ctx.fillStyle='#ffcc80';ctx.fillRect(px+5,py+2,10,9);
+    ctx.fillStyle='#000';ctx.fillRect(px+8,py+5,2,2);ctx.fillRect(px+12,py+5,2,2);
+    ctx.fillStyle='#e53935';ctx.fillRect(px+4,py+8,12,3);ctx.fillRect(px+14,py+8,3,6);
+    let lo=player.animFrame%2===0?1:-1;
+    ctx.fillStyle='#3a3a3a';ctx.fillRect(px+7,py+20,3,6+lo);ctx.fillRect(px+11,py+20,3,6-lo);
+    if (player.hasRadSuit) { ctx.strokeStyle='rgba(255,200,50,0.5)';ctx.lineWidth=2;ctx.strokeRect(px+4,py,14,28); }
+  }
+
   ctx.restore();
-  
-  // HUD
   drawHUD();
-  
-  // Night overlay
-  if (dayNight < 0.3) {
-    ctx.fillStyle = `rgba(0,0,20,${0.5 - dayNight})`;
-    ctx.fillRect(0, 0, W, H);
+
+  if (dayNight<0.3) { ctx.fillStyle=`rgba(0,0,20,${0.5-dayNight})`;ctx.fillRect(0,0,W,H); }
+
+  let hintEl = document.getElementById('interactHint');
+  if (interactHint && interactHintTimer > 0) {
+    hintEl.textContent = interactHint; hintEl.style.display = 'block';
+  } else {
+    hintEl.style.display = 'none';
   }
 }
 
 function drawHUD() {
-  let hudX = 10, hudY = 10, barW = 140, barH = 10, gap = 6;
-  
-  function drawBar(label, val, max, color, y) {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(hudX, y, barW + 4, barH + 4);
-    ctx.fillStyle = '#333';
-    ctx.fillRect(hudX + 2, y + 2, barW, barH);
-    ctx.fillStyle = color;
-    ctx.fillRect(hudX + 2, y + 2, barW * (val / max), barH);
-    ctx.fillStyle = '#fff';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(label + ': ' + Math.floor(val) + '/' + max, hudX + 4, y + barH);
+  let hx=10, hy=10, bw=150, bh=12, g=7;
+  function bar(label, v, m, c, y, icon) {
+    let pct = v/m;
+    // Background
+    ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(hx,y,bw+4,bh+4);
+    ctx.fillStyle='#222';ctx.fillRect(hx+2,y+2,bw,bh);
+    // Bar fill
+    ctx.fillStyle=c;ctx.fillRect(hx+2,y+2,bw*pct,bh);
+    // Warning flash
+    if (pct < 0.25 && Math.sin(gameTime*6) > 0) {
+      ctx.fillStyle='rgba(255,0,0,0.5)';ctx.fillRect(hx+2,y+2,bw*pct,bh);
+    }
+    // Label
+    ctx.fillStyle='#fff';ctx.font='bold 10px monospace';ctx.textAlign='left';
+    ctx.fillText((icon||'')+label+': '+Math.floor(v)+'/'+m, hx+4, y+bh-1);
+    // Status text
+    if (pct < 0.25) {
+      ctx.fillStyle='#ff4444';ctx.font='8px monospace';ctx.textAlign='right';
+      let warn = label==='HP'?'危险!':label==='饥饿'?'饥饿!':label==='口渴'?'口渴!':label==='辐射'?'辐射!':'';
+      ctx.fillText(warn, hx+bw, y+bh-1);
+    }
   }
-  
-  drawBar('HP', player.hp, player.maxHp, '#e53935', hudY);
-  drawBar('饥饿', player.hunger, player.maxHunger, '#ff9800', hudY + barH + gap);
-  drawBar('口渴', player.thirst, player.maxThirst, '#2196f3', hudY + (barH + gap) * 2);
-  drawBar('辐射', player.radiation, player.maxRadiation, '#ffeb3b', hudY + (barH + gap) * 3);
-  
-  // Depth & time
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(hudX, hudY + (barH + gap) * 4 - 2, 100, 20);
-  ctx.fillStyle = '#fff';
-  ctx.font = '10px monospace';
-  ctx.fillText('深度: ' + player.depth + 'm', hudX + 4, hudY + (barH + gap) * 4 + 12);
-  
-  // Water warning
+  bar('HP',player.hp,player.maxHp,'#e53935',hy,'❤️ ');
+  bar('饥饿',player.hunger,player.maxHunger,'#ff9800',hy+bh+g,'🍖 ');
+  bar('口渴',player.thirst,player.maxThirst,'#2196f3',hy+(bh+g)*2,'💧 ');
+  bar('辐射',player.radiation,player.maxRadiation,'#ffeb3b',hy+(bh+g)*3,'☢️ ');
+
+  // Depth
+  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(hx,hy+(bh+g)*4,90,18);
+  ctx.fillStyle='#aaa';ctx.font='10px monospace';ctx.textAlign='left';
+  ctx.fillText('⬇ 深度: '+player.depth+'m',hx+4,hy+(bh+g)*4+13);
+
   if (player.inWater) {
-    ctx.fillStyle = 'rgba(255,50,20,0.8)';
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚠ 辐射水中！', W/2, H - 200);
+    ctx.fillStyle='rgba(255,50,20,0.8)';ctx.font='bold 13px monospace';ctx.textAlign='center';
+    ctx.fillText('⚠ 辐射水中！',W/2,H-210);
   }
-  
-  // Clues found
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(W - 80, 10, 70, 20);
-  ctx.fillStyle = '#ffd700';
-  ctx.font = '10px monospace';
-  ctx.textAlign = 'right';
-  ctx.fillText('线索: ' + discoveredClues.length + '/' + CLUE_DATA.length, W - 15, 25);
+
+  // Clue count
+  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(W-85,10,75,22);
+  ctx.fillStyle='#ffd700';ctx.font='10px monospace';ctx.textAlign='right';
+  ctx.fillText('线索: '+discoveredClues.length+'/'+CLUE_DATA.length, W-15,26);
 }
 
 // ==================== INTERACTION ====================
-function tryGather() {
-  let tx = Math.floor(player.x / TILE);
-  let ty = Math.floor(player.y / TILE);
-  if (tx < 0 || tx >= WORLD_W || ty < 0 || ty >= WORLD_H) return;
-  
-  let tile = worldTiles[ty][tx];
-  let gathered = null;
-  
-  if (tile === 'tree') {
-    gathered = 'wood';
-    addItem('wood', 1);
-    showToast('获得木材 x1');
-  } else if (tile === 'stone_ore') {
-    gathered = 'stone';
-    addItem('stone', 1);
-    showToast('获得石头 x1');
-  } else if (tile === 'grass') {
-    if (Math.random() < 0.3) {
-      addItem('wood', 1);
-      showToast('获得木材 x1');
-    }
+function spawnParticles(x, y, count, r, g, b) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random()-0.5)*60,
+      vy: (Math.random()-0.5)*60 - 20,
+      life: 0.4 + Math.random()*0.3,
+      maxLife: 0.7,
+      r, g, b
+    });
   }
-  
-  if (gathered && Math.random() < 0.2) {
-    worldTiles[ty][tx] = 'grass';
+}
+
+function tryGather() {
+  let tx=Math.floor(player.x/TILE), ty=Math.floor(player.y/TILE);
+  if (tx<0||tx>=WORLD_W||ty<0||ty>=WORLD_H) return;
+  let tile = worldTiles[ty][tx];
+  let px = player.x, py = player.y;
+  switch(tile) {
+    case 'tree':
+      let wc = 2+Math.floor(Math.random()*4);
+      addItem('wood', wc);
+      spawnParticles(px, py-10, 8, 139, 90, 43);
+      showToast('🌲 获得木材 x'+wc);
+      if (Math.random()<0.2) worldTiles[ty][tx]='grass';
+      break;
+    case 'stone_ore':
+      let sc = 1+Math.floor(Math.random()*3);
+      addItem('stone', sc);
+      spawnParticles(px, py-10, 6, 180, 180, 180);
+      showToast('🪨 获得石头 x'+sc);
+      break;
+    case 'berry_bush':
+      let bc = 2+Math.floor(Math.random()*3);
+      addItem('berry', bc);
+      spawnParticles(px, py-10, 5, 233, 30, 99);
+      showToast('🫐 获得浆果 x'+bc);
+      if (Math.random()<0.25) worldTiles[ty][tx]='grass';
+      break;
+    case 'fresh_water':
+      let fw = 1+Math.floor(Math.random()*3);
+      addItem('fresh_water', fw);
+      spawnParticles(px, py-10, 5, 100, 180, 255);
+      showToast('💧 获得淡水 x'+fw);
+      break;
+    case 'grass':
+      if (Math.random()<0.3) { addItem('wood',1); showToast('捡到木材 x1'); spawnParticles(px,py-10,3,139,90,43); }
+      else showToast('这里没有东西可采集');
+      break;
+    default:
+      showToast('这里没有可采集的东西');
   }
 }
 
 function tryMine() {
-  let tx = Math.floor(player.x / TILE);
-  let ty = Math.floor(player.y / TILE);
-  if (tx < 0 || tx >= WORLD_W || ty < 0 || ty >= WORLD_H) return;
-  
+  let tx=Math.floor(player.x/TILE), ty=Math.floor(player.y/TILE);
+  if (tx<0||tx>=WORLD_W||ty<0||ty>=WORLD_H) return;
   let tile = worldTiles[ty][tx];
-  
-  if (tile === 'stone_ore') {
-    if (getItemCount('pickaxe') > 0) {
-      addItem('stone', 3);
-      worldTiles[ty][tx] = 'grass';
-      showToast('⛏️ 挖到石头 x3');
-    } else {
-      showToast('需要镐子！');
-    }
-  } else if (tile === 'dirt') {
-    if (getItemCount('shovel') > 0) {
-      addItem('stone', 1);
-      showToast('🔧 挖到石头 x1');
-    } else {
-      showToast('需要铲子！');
-    }
-  } else if (tile === 'cave') {
-    if (getItemCount('mine_entrance') > 0) {
+  let px = player.x, py = player.y;
+  let hasPick = getItemCount('pickaxe')>0 || getItemCount('iron_pickaxe')>0;
+  let hasShovel = getItemCount('shovel')>0 || getItemCount('iron_shovel')>0;
+
+  switch(tile) {
+    case 'stone_ore':
+      if (hasPick) {
+        let sc = 4+Math.floor(Math.random()*4);
+        addItem('stone', sc);
+        worldTiles[ty][tx]='grass';
+        spawnParticles(px, py-10, 12, 180, 180, 180);
+        showToast('⛏️ 镐子挖到石头 x'+sc+'！');
+      } else {
+        let sc = 1+Math.floor(Math.random()*2);
+        addItem('stone', sc);
+        spawnParticles(px, py-10, 4, 150, 150, 150);
+        showToast('🤲 徒手挖到石头 x'+sc+' (做把镐子挖更快！)');
+        if (Math.random()<0.2) worldTiles[ty][tx]='grass';
+      }
+      break;
+    case 'iron_ore':
+      if (hasPick) {
+        let ic = 2+Math.floor(Math.random()*3);
+        addItem('iron_ore', ic);
+        worldTiles[ty][tx]='dirt';
+        spawnParticles(px, py-10, 10, 196, 154, 108);
+        showToast('⛏️ 挖到铁矿 x'+ic+'！');
+      } else {
+        let ic = 1;
+        addItem('iron_ore', ic);
+        spawnParticles(px, py-10, 3, 180, 130, 90);
+        showToast('🤲 徒手挖到铁矿 x1 (太慢了！做镐子)');
+        if (Math.random()<0.1) worldTiles[ty][tx]='dirt';
+      }
+      break;
+    case 'coal_ore':
+      if (hasPick) {
+        let cc = 2+Math.floor(Math.random()*3);
+        addItem('coal', cc);
+        worldTiles[ty][tx]='dirt';
+        spawnParticles(px, py-10, 10, 60, 60, 60);
+        showToast('⛏️ 挖到煤矿 x'+cc+'！');
+      } else {
+        let cc = 1;
+        addItem('coal', cc);
+        spawnParticles(px, py-10, 3, 50, 50, 50);
+        showToast('🤲 徒手挖到煤矿 x1');
+        if (Math.random()<0.1) worldTiles[ty][tx]='dirt';
+      }
+      break;
+    case 'gold_ore':
+      if (hasPick) {
+        let gc = 1+Math.floor(Math.random()*3);
+        addItem('gold_ore', gc);
+        worldTiles[ty][tx]='dirt';
+        spawnParticles(px, py-10, 15, 255, 215, 0);
+        showToast('✨ 挖到金矿 x'+gc+'！！');
+      } else {
+        showToast('金矿很硬，需要镐子！');
+      }
+      break;
+    case 'dirt':
+      if (hasShovel) {
+        let r=Math.random();
+        if (r<0.25) { addItem('stone',3); spawnParticles(px,py-10,8,180,180,180); showToast('🔧 铲子挖到石头 x3'); }
+        else if (r<0.45) { addItem('iron_ore',2); spawnParticles(px,py-10,8,196,154,108); showToast('🔧 铲子挖到铁矿 x2'); }
+        else if (r<0.60) { addItem('coal',2); spawnParticles(px,py-10,8,60,60,60); showToast('🔧 铲子挖到煤矿 x2'); }
+        else if (r<0.65) { addItem('gold_ore',1); spawnParticles(px,py-10,12,255,215,0); showToast('🔧 铲子挖到金矿！'); }
+        else { spawnParticles(px,py-10,5,139,105,20); showToast('🔧 只挖到泥土...'); }
+      } else {
+        let r=Math.random();
+        if (r<0.15) { addItem('stone',1); spawnParticles(px,py-10,3,150,150,150); showToast('🤲 徒手挖到石头 x1'); }
+        else if (r<0.25) { addItem('iron_ore',1); spawnParticles(px,py-10,3,180,130,90); showToast('🤲 徒手挖到铁矿 x1'); }
+        else if (r<0.35) { addItem('coal',1); spawnParticles(px,py-10,3,50,50,50); showToast('🤲 徒手挖到煤矿 x1'); }
+        else if (r<0.38) { addItem('gold_ore',1); spawnParticles(px,py-10,10,255,215,0); showToast('✨ 徒手挖到金矿！'); }
+        else { showToast('🤲 什么都没挖到...做把铲子吧'); }
+      }
+      break;
+    case 'cave':
       player.depth -= 10;
-      showToast('🕳️ 进入地下层！深度: ' + player.depth + 'm');
-    } else {
-      showToast('需要矿井入口！');
-    }
+      showToast('🕳️ 进入地下层！深度: '+player.depth+'m');
+      spawnParticles(px, py-10, 20, 30, 30, 30);
+      // Regenerate underground
+      for (let y=0;y<WORLD_H;y++) for (let x=0;x<WORLD_W;x++) {
+        if (worldTiles[y][x]==='grass'||worldTiles[y][x]==='tree'||worldTiles[y][x]==='berry_bush'||worldTiles[y][x]==='fresh_water')
+          worldTiles[y][x]='dirt';
+      }
+      // Dense ores underground
+      for (let i=0;i<50;i++) {
+        let rx=Math.floor(Math.random()*WORLD_W), ry=Math.floor(Math.random()*WORLD_H);
+        if (worldTiles[ry]&&worldTiles[ry][rx]==='dirt') {
+          let r=Math.random();
+          if (r<0.25) worldTiles[ry][rx]='stone_ore';
+          else if (r<0.45) worldTiles[ry][rx]='iron_ore';
+          else if (r<0.55) worldTiles[ry][rx]='coal_ore';
+          else if (r<0.58) worldTiles[ry][rx]='gold_ore';
+        }
+      }
+      // Add some trees back for atmosphere
+      for (let i=0;i<10;i++) {
+        let rx=Math.floor(Math.random()*WORLD_W), ry=Math.floor(Math.random()*WORLD_H);
+        if (worldTiles[ry]&&worldTiles[ry][rx]==='dirt') worldTiles[ry][rx]='tree';
+      }
+      break;
+    default:
+      showToast('这里没有可挖掘的东西');
   }
 }
 
-function addItem(id, count) {
-  if (!inventory[id]) inventory[id] = 0;
-  inventory[id] += count;
+function tryUseItem(itemId) {
+  let usable = USABLE_ITEMS[itemId];
+  if (!usable) { showToast('这个物品不能直接使用'); return; }
+  if (!removeItem(itemId, 1)) { showToast('没有这个物品！'); return; }
+  if (usable.hunger) player.hunger = Math.min(player.maxHunger, player.hunger + usable.hunger);
+  if (usable.thirst) player.thirst = Math.min(player.maxThirst, player.thirst + usable.thirst);
+  if (usable.hp) player.hp = Math.min(player.maxHp, player.hp + usable.hp);
+  showToast(usable.msg);
+  updateInventoryPanel();
 }
 
-function getItemCount(id) {
-  return inventory[id] || 0;
-}
-
+function addItem(id, count) { if (!inventory[id]) inventory[id]=0; inventory[id]+=count; }
+function getItemCount(id) { return inventory[id]||0; }
 function removeItem(id, count) {
-  if (!inventory[id] || inventory[id] < count) return false;
-  inventory[id] -= count;
-  if (inventory[id] <= 0) delete inventory[id];
+  if (!inventory[id]||inventory[id]<count) return false;
+  inventory[id]-=count; if (inventory[id]<=0) delete inventory[id];
   return true;
 }
 
 function tryCraft(recipe) {
-  for (let [item, count] of Object.entries(recipe.req)) {
-    if (getItemCount(item) < count) {
-      showToast('材料不足！');
-      return;
+  for (let [item,count] of Object.entries(recipe.req)) {
+    if (getItemCount(item)<count) {
+      let missing = Object.entries(recipe.req).map(([k,v])=>ITEM_NAMES[k]+'x'+v+' (有'+getItemCount(k)+')').join(', ');
+      showToast('材料不足！需要: '+missing); return;
     }
   }
-  for (let [item, count] of Object.entries(recipe.req)) {
-    removeItem(item, count);
-  }
-  for (let [item, count] of Object.entries(recipe.give)) {
-    addItem(item, count);
-  }
-  showToast('制作成功: ' + recipe.name);
-  updateCraftPanel();
-  updateInventoryPanel();
+  for (let [item,count] of Object.entries(recipe.req)) removeItem(item, count);
+  for (let [item,count] of Object.entries(recipe.give)) addItem(item, count);
+  showToast('✅ 制作成功: ' + recipe.name);
+  updateCraftPanel(); updateInventoryPanel();
 }
 
 // ==================== UI ====================
 function showToast(msg) {
-  const toast = document.getElementById('clueToast');
-  toast.textContent = msg;
-  toast.style.display = 'block';
-  clearTimeout(toast._timeout);
-  toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 2500);
+  const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(t._timeout); t._timeout=setTimeout(()=>{t.style.display='none';},2500);
 }
-
-function closePanel(id) {
-  document.getElementById(id).style.display = 'none';
-}
+function closePanel(id) { document.getElementById(id).style.display='none'; }
 
 function updateInventoryPanel() {
-  const list = document.getElementById('inventoryList');
-  let html = '';
-  let items = Object.entries(inventory);
-  if (items.length === 0) {
-    html = '<p style="color:#666;text-align:center;">背包是空的</p>';
-  } else {
-    for (let [id, count] of items) {
-      let name = id.replace(/_/g, ' ');
-      html += `<div class="item"><span class="itemName">${name}</span><span>x${count}</span></div>`;
-    }
+  const list=document.getElementById('inventoryList');
+  let items=Object.entries(inventory), html='';
+  if (items.length===0) html='<p style="color:#666;text-align:center;">背包是空的</p>';
+  else for (let [id,count] of items) {
+    let name = ITEM_NAMES[id] || id.replace(/_/g,' ');
+    let useBtn = USABLE_ITEMS[id] ? `<button class="useBtn" onclick="tryUseItem('${id}')">使用</button>` : '';
+    html += `<div class="item"><span class="itemName">${name}</span><span>x${count}${useBtn}</span></div>`;
   }
   list.innerHTML = html;
 }
 
 function updateCraftPanel() {
-  const list = document.getElementById('craftList');
-  let html = '';
+  const list=document.getElementById('craftList');
+  let html='';
   for (let recipe of RECIPES) {
-    let canCraft = true;
-    let reqText = [];
-    for (let [item, count] of Object.entries(recipe.req)) {
-      let has = getItemCount(item);
-      if (has < count) canCraft = false;
-      reqText.push(`${item}:${has}/${count}`);
+    let canCraft=true, reqText=[];
+    for (let [item,count] of Object.entries(recipe.req)) {
+      let has=getItemCount(item); if (has<count) canCraft=false;
+      reqText.push((ITEM_NAMES[item]||item)+':'+has+'/'+count);
     }
-    html += `<div class="item">
-      <div><span class="itemName">${recipe.icon} ${recipe.name}</span><br><small style="color:#666;">${reqText.join(', ')}</small></div>
-      <button class="craftBtn" ${canCraft?'':'disabled'} onclick="tryCraft(RECIPES[${RECIPES.indexOf(recipe)}])">制作</button>
-    </div>`;
+    html += `<div class="item"><div><span class="itemName">${recipe.icon} ${recipe.name}</span><br><small style="color:#888;">${reqText.join(', ')}</small></div><button class="craftBtn" ${canCraft?'':'disabled'} onclick="tryCraft(RECIPES[${RECIPES.indexOf(recipe)}])">制作</button></div>`;
   }
   list.innerHTML = html;
 }
 
 // ==================== EVENT HANDLERS ====================
-document.getElementById('btnInventory').addEventListener('click', () => {
-  updateInventoryPanel();
-  document.getElementById('inventoryPanel').style.display = 'block';
-});
-document.getElementById('btnCraft').addEventListener('click', () => {
-  updateCraftPanel();
-  document.getElementById('craftPanel').style.display = 'block';
-});
-document.getElementById('btnMenu').addEventListener('click', () => {
-  gameState = 'paused';
-  document.getElementById('pausePanel').style.display = 'block';
-});
-document.getElementById('btnGather').addEventListener('click', tryGather);
-document.getElementById('btnMine').addEventListener('click', tryMine);
+document.getElementById('btnInventory').addEventListener('click',()=>{updateInventoryPanel();document.getElementById('inventoryPanel').style.display='block';});
+document.getElementById('btnCraft').addEventListener('click',()=>{updateCraftPanel();document.getElementById('craftPanel').style.display='block';});
+document.getElementById('btnMenu').addEventListener('click',()=>{gameState='paused';document.getElementById('pausePanel').style.display='block';});
+document.getElementById('btnGather').addEventListener('click',(e)=>{e.preventDefault();tryGather();});
+document.getElementById('btnMine').addEventListener('click',(e)=>{e.preventDefault();tryMine();});
+document.getElementById('btnUse').addEventListener('click',(e)=>{e.preventDefault();updateInventoryPanel();document.getElementById('inventoryPanel').style.display='block';});
 
-// D-Pad events
-function setupDpadBtn(id, dx, dy) {
-  const btn = document.getElementById(id);
-  btn.addEventListener('pointerdown', (e) => { e.preventDefault(); moveDir.x = dx; moveDir.y = dy; });
-  btn.addEventListener('pointerup', (e) => { e.preventDefault(); moveDir.x = 0; moveDir.y = 0; });
-  btn.addEventListener('pointerleave', (e) => { moveDir.x = 0; moveDir.y = 0; });
+function setupDpad(id,dx,dy) {
+  const b=document.getElementById(id);
+  b.addEventListener('pointerdown',(e)=>{e.preventDefault();moveDir.x=dx;moveDir.y=dy;});
+  b.addEventListener('pointerup',(e)=>{e.preventDefault();if(moveDir.x===dx)moveDir.x=0;if(moveDir.y===dy)moveDir.y=0;});
+  b.addEventListener('pointerleave',()=>{if(moveDir.x===dx)moveDir.x=0;if(moveDir.y===dy)moveDir.y=0;});
 }
-setupDpadBtn('btnUp', 0, -1);
-setupDpadBtn('btnDown', 0, 1);
-setupDpadBtn('btnLeft', -1, 0);
-setupDpadBtn('btnRight', 1, 0);
+setupDpad('btnUp',0,-1);setupDpad('btnDown',0,1);setupDpad('btnLeft',-1,0);setupDpad('btnRight',1,0);
 
-// Keyboard
-document.addEventListener('keydown', (e) => {
-  keys[e.key] = true;
-  switch(e.key) {
-    case 'ArrowUp': case 'w': moveDir.y = -1; break;
-    case 'ArrowDown': case 's': moveDir.y = 1; break;
-    case 'ArrowLeft': case 'a': moveDir.x = -1; break;
-    case 'ArrowRight': case 'd': moveDir.x = 1; break;
-    case 'e': tryGather(); break;
-    case 'q': tryMine(); break;
-    case 'i': updateInventoryPanel(); document.getElementById('inventoryPanel').style.display = 'block'; break;
-    case 'c': updateCraftPanel(); document.getElementById('craftPanel').style.display = 'block'; break;
-    case 'Escape': 
-      if (gameState === 'playing') {
-        gameState = 'paused';
-        document.getElementById('pausePanel').style.display = 'block';
-      }
-      break;
-  }
+document.addEventListener('keydown',(e)=>{
+  keys[e.key]=true;
+  switch(e.key){case'ArrowUp':case'w':moveDir.y=-1;break;case'ArrowDown':case's':moveDir.y=1;break;case'ArrowLeft':case'a':moveDir.x=-1;break;case'ArrowRight':case'd':moveDir.x=1;break;case'e':tryGather();break;case'q':tryMine();break;case'f':case'i':updateInventoryPanel();document.getElementById('inventoryPanel').style.display='block';break;case'c':updateCraftPanel();document.getElementById('craftPanel').style.display='block';break;case'Escape':if(gameState==='playing'){gameState='paused';document.getElementById('pausePanel').style.display='block';}break;}
 });
-document.addEventListener('keyup', (e) => {
-  keys[e.key] = false;
-  switch(e.key) {
-    case 'ArrowUp': case 'w': if (moveDir.y === -1) moveDir.y = 0; break;
-    case 'ArrowDown': case 's': if (moveDir.y === 1) moveDir.y = 0; break;
-    case 'ArrowLeft': case 'a': if (moveDir.x === -1) moveDir.x = 0; break;
-    case 'ArrowRight': case 'd': if (moveDir.x === 1) moveDir.x = 0; break;
-  }
+document.addEventListener('keyup',(e)=>{
+  keys[e.key]=false;
+  switch(e.key){case'ArrowUp':case'w':if(moveDir.y===-1)moveDir.y=0;break;case'ArrowDown':case's':if(moveDir.y===1)moveDir.y=0;break;case'ArrowLeft':case'a':if(moveDir.x===-1)moveDir.x=0;break;case'ArrowRight':case'd':if(moveDir.x===1)moveDir.x=0;break;}
 });
 
-// Resize
-window.addEventListener('resize', resizeCanvas);
-
-// ==================== START ====================
+window.addEventListener('resize',resizeCanvas);
 simulateLoading();
 </script>
 </body>
