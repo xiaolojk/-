@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-"""Generate anti-aliased Chinese bitmap font (8bpp encoding, 24x24)."""
+"""Generate 16x16 1bpp Chinese bitmap font from a Chinese TrueType font.
+
+Usage: python3 gen_font.py [path/to/chinese_font.ttf]
+
+The font must be a TrueType font with Chinese character support (e.g. SimHei, Noto Sans CJK).
+Each character is rendered as 16x16 pixels, 1 bit per pixel (MSB=leftmost pixel).
+Output: font_data.h in C++ format for GLES rendering.
+"""
 from PIL import Image, ImageDraw, ImageFont
-import os
+import os, sys
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "jni", "font_data.h")
-CHAR_SIZE = 24  # 24x24 pixels per character - much better for Chinese
+CHAR_SIZE = 16  # 16x16 pixels per character
 
 TEXTS = [
     "蓝色迷海点击开始生存冒险精美版",
@@ -31,6 +38,29 @@ TEXTS = [
     "重置默认",
 ]
 
+# Choose font file
+if len(sys.argv) > 1:
+    font_path = sys.argv[1]
+else:
+    # Try common Chinese fonts
+    candidates = [
+        "/usr/share/fonts/truetype/SimHei.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+    ]
+    font_path = None
+    for c in candidates:
+        if os.path.exists(c):
+            font_path = c
+            break
+    if not font_path:
+        print("ERROR: No Chinese font found. Provide path as argument.")
+        print("Candidates:", candidates)
+        sys.exit(1)
+
+print(f"Using font: {font_path}")
+
 chars = set()
 for t in TEXTS:
     for c in t:
@@ -38,11 +68,10 @@ for t in TEXTS:
 chars = sorted(chars)
 print(f"Total unique characters: {len(chars)}")
 
-# Use DejaVu Sans Bold for better readability
-font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", CHAR_SIZE - 2)
+font = ImageFont.truetype(font_path, CHAR_SIZE - 1)
 
-def render_char_gray(ch):
-    """Render character as 24x24 grayscale (8bpp) for anti-aliased display."""
+def render_char_1bpp(ch):
+    """Render character as 16x16 1bpp (MSB=leftmost pixel)."""
     img = Image.new('L', (CHAR_SIZE, CHAR_SIZE), 0)
     draw = ImageDraw.Draw(img)
     bbox = draw.textbbox((0, 0), ch, font=font)
@@ -52,20 +81,24 @@ def render_char_gray(ch):
     y = (CHAR_SIZE - h) // 2 - bbox[1]
     draw.text((x, y), ch, fill=255, font=font)
     px = img.load()
-    gray = []
+    rows = []
     for row in range(CHAR_SIZE):
+        val = 0
         for col in range(CHAR_SIZE):
-            gray.append(px[col, row])
-    return gray
+            if px[col, row] > 128:
+                val |= (1 << (CHAR_SIZE - 1 - col))  # MSB = leftmost
+        rows.append(val)
+    return rows
 
-# Generate C++ header with 8bpp encoding
+# Generate C++ header
 lines = []
-lines.append("// font_data.h - Anti-aliased Chinese bitmap font (8bpp, 24x24)")
+lines.append("// font_data.h - Compact Chinese pixel bitmap font (1bpp)")
 lines.append("#pragma once")
 lines.append("#include <cstdint>")
 lines.append("")
 lines.append(f"static const int FONT_CHAR_SIZE = {CHAR_SIZE};")
 lines.append(f"static const int FONT_CHAR_COUNT = {len(chars)};")
+lines.append(f"static const int FONT_BYTES_PER_CHAR = {CHAR_SIZE * 2};")
 lines.append("")
 lines.append("// Character lookup table: unicode codepoint -> font index")
 lines.append("static const uint16_t FONT_UNICODES[FONT_CHAR_COUNT] = {")
@@ -75,11 +108,11 @@ for i in range(0, len(chars), 16):
     lines.append(f"    {hex_str},")
 lines.append("};")
 lines.append("")
-lines.append(f"// Font bitmap data: {CHAR_SIZE}x{CHAR_SIZE} grayscale pixels per character (8bpp)")
-lines.append(f"static const uint8_t FONT_BITMAPS[FONT_CHAR_COUNT][{CHAR_SIZE*CHAR_SIZE}] = {{")
+lines.append(f"// Font bitmap data: {CHAR_SIZE} rows x {CHAR_SIZE} bits per character (MSB=leftmost pixel)")
+lines.append(f"static const uint16_t FONT_BITMAPS[FONT_CHAR_COUNT][{CHAR_SIZE}] = {{")
 for ch in chars:
-    gray = render_char_gray(ch)
-    hex_str = ", ".join(f"0x{v:02X}" for v in gray)
+    rows = render_char_1bpp(ch)
+    hex_str = ", ".join(f"0x{v:04X}" for v in rows)
     lines.append(f"    {{{hex_str}}},")
 lines.append("};")
 lines.append("")
@@ -98,6 +131,6 @@ lines.append("}")
 with open(OUT, 'w') as f:
     f.write('\n'.join(lines))
 
-total_bytes = len(chars) * CHAR_SIZE * CHAR_SIZE + len(chars) * 2
+total_bytes = len(chars) * CHAR_SIZE * 2 + len(chars) * 2
 print(f"Generated {OUT}")
 print(f"Chars: {len(chars)}, Data size: ~{total_bytes} bytes ({total_bytes/1024:.1f}KB)")
