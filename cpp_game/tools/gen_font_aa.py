@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 import os, re
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "jni", "font_data.h")
-CHAR_SIZE = 16  # 16x16 pixels per character - anti-aliased (POT atlas)
+CHAR_SIZE = 32  # 32x32 pixels per character - high-res anti-aliased
 
 TEXTS = [
     "蓝色迷海点击开始生存冒险精美版",
@@ -41,7 +41,7 @@ for t in TEXTS:
 chars = sorted(chars)
 print(f"Total unique characters: {len(chars)}")
 
-font = ImageFont.truetype(FONT_PATH, CHAR_SIZE - 1)
+font = ImageFont.truetype(FONT_PATH, CHAR_SIZE - 4)
 
 def render_char_gray(ch):
     """Render character as 16x16 grayscale (8bpp) for anti-aliased display."""
@@ -62,7 +62,7 @@ def render_char_gray(ch):
 
 # Generate C++ header with 8bpp encoding
 lines = []
-lines.append("// font_data.h - Anti-aliased Chinese bitmap font (8bpp, 16x16, SimHei)")
+lines.append("// font_data.h - Anti-aliased Chinese bitmap font (8bpp, 32x32, SimHei)")
 lines.append("#pragma once")
 lines.append("#include <cstdint>")
 lines.append("")
