@@ -111,7 +111,8 @@ void loadFont(){
         }
     }
 
-    jclass cls = env->FindClass("com/orgc/lostbluesea/GameActivity");
+    // 用activity实例获取类引用(FindClass在native线程找不到应用类)
+    jclass cls = env->GetObjectClass(g_app->activity->clazz);
     if(!cls){
         __android_log_print(ANDROID_LOG_ERROR, "Game", "GameActivity class not found");
         if(attached) vm->DetachCurrentThread();
