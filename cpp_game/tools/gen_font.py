@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""Generate compact Chinese pixel bitmap font (1bpp encoding)."""
+"""Generate anti-aliased Chinese bitmap font (8bpp encoding, 24x24)."""
 from PIL import Image, ImageDraw, ImageFont
 import os
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "jni", "font_data.h")
-FONT_PATH = "/tmp/cjk.ttf"
-CHAR_SIZE = 16  # 16x16 pixels per character
+CHAR_SIZE = 24  # 24x24 pixels per character - much better for Chinese
 
 TEXTS = [
     "蓝色迷海点击开始生存冒险精美版",
-    "暂停继续重新开始退出设置",
+    "暂停继续重新开始退出设置按键位置",
     "生命饥饿口渴辐射线索挖掘中",
     "辐射水",
     "跳挖用背包制作菜单",
@@ -28,6 +27,8 @@ TEXTS = [
     " Orgc Studio 0123456789",
     ":%/!.,+-?()[]",
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+    "拖拽按钮到想要的位置",
+    "重置默认",
 ]
 
 chars = set()
@@ -37,9 +38,11 @@ for t in TEXTS:
 chars = sorted(chars)
 print(f"Total unique characters: {len(chars)}")
 
-font = ImageFont.truetype(FONT_PATH, CHAR_SIZE - 2)
+# Use DejaVu Sans Bold for better readability
+font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", CHAR_SIZE - 2)
 
-def render_char_bits(ch):
+def render_char_gray(ch):
+    """Render character as 24x24 grayscale (8bpp) for anti-aliased display."""
     img = Image.new('L', (CHAR_SIZE, CHAR_SIZE), 0)
     draw = ImageDraw.Draw(img)
     bbox = draw.textbbox((0, 0), ch, font=font)
@@ -49,25 +52,20 @@ def render_char_bits(ch):
     y = (CHAR_SIZE - h) // 2 - bbox[1]
     draw.text((x, y), ch, fill=255, font=font)
     px = img.load()
-    bits = []
+    gray = []
     for row in range(CHAR_SIZE):
-        row_bits = 0
         for col in range(CHAR_SIZE):
-            if px[col, row] > 80:
-                row_bits |= (1 << (CHAR_SIZE - 1 - col))
-        bits.append(row_bits)
-    return bits
+            gray.append(px[col, row])
+    return gray
 
-# Generate C++ header with 1bpp encoding
-# Each char: 16 rows * 2 bytes = 32 bytes
+# Generate C++ header with 8bpp encoding
 lines = []
-lines.append("// font_data.h - Compact Chinese pixel bitmap font (1bpp)")
+lines.append("// font_data.h - Anti-aliased Chinese bitmap font (8bpp, 24x24)")
 lines.append("#pragma once")
 lines.append("#include <cstdint>")
 lines.append("")
 lines.append(f"static const int FONT_CHAR_SIZE = {CHAR_SIZE};")
 lines.append(f"static const int FONT_CHAR_COUNT = {len(chars)};")
-lines.append(f"static const int FONT_BYTES_PER_CHAR = {CHAR_SIZE * 2};")
 lines.append("")
 lines.append("// Character lookup table: unicode codepoint -> font index")
 lines.append("static const uint16_t FONT_UNICODES[FONT_CHAR_COUNT] = {")
@@ -77,11 +75,11 @@ for i in range(0, len(chars), 16):
     lines.append(f"    {hex_str},")
 lines.append("};")
 lines.append("")
-lines.append("// Font bitmap data: 16 rows x 16 bits per character (MSB=leftmost pixel)")
-lines.append(f"static const uint16_t FONT_BITMAPS[FONT_CHAR_COUNT][{CHAR_SIZE}] = {{")
+lines.append(f"// Font bitmap data: {CHAR_SIZE}x{CHAR_SIZE} grayscale pixels per character (8bpp)")
+lines.append(f"static const uint8_t FONT_BITMAPS[FONT_CHAR_COUNT][{CHAR_SIZE*CHAR_SIZE}] = {{")
 for ch in chars:
-    bits = render_char_bits(ch)
-    hex_str = ", ".join(f"0x{b:04X}" for b in bits)
+    gray = render_char_gray(ch)
+    hex_str = ", ".join(f"0x{v:02X}" for v in gray)
     lines.append(f"    {{{hex_str}}},")
 lines.append("};")
 lines.append("")
@@ -100,6 +98,6 @@ lines.append("}")
 with open(OUT, 'w') as f:
     f.write('\n'.join(lines))
 
-total_bytes = len(chars) * CHAR_SIZE * 2 + len(chars) * 2
+total_bytes = len(chars) * CHAR_SIZE * CHAR_SIZE + len(chars) * 2
 print(f"Generated {OUT}")
 print(f"Chars: {len(chars)}, Data size: ~{total_bytes} bytes ({total_bytes/1024:.1f}KB)")
