@@ -1,4 +1,4 @@
-// render.cpp - GLES2 像素化渲染 (v6.0 中文版)
+// render.cpp - GLES2 渲染 (v8.0 抗锯齿字体版)
 #include "game.h"
 #include "sprites.h"
 #include "font_data.h"
@@ -74,7 +74,7 @@ void loadTextures(){
 
 // ==================== 字体加载 ====================
 void loadFont(){
-    // 创建字体纹理图集 (16列 x N行, 每字符16x16, 1bpp点阵)
+    // 创建字体纹理图集 (16列 x N行, 每字符24x24, 8bpp抗锯齿)
     int cols=16;
     int rows=(FONT_CHAR_COUNT+cols-1)/cols;
     int atlasW=cols*FONT_CHAR_SIZE;
@@ -84,19 +84,19 @@ void loadFont(){
     for(int i=0;i<FONT_CHAR_COUNT;i++){
         int col=i%cols, row=i/cols;
         for(int y=0;y<FONT_CHAR_SIZE;y++){
-            uint16_t bits=FONT_BITMAPS[i][y]; // 1bpp: MSB=leftmost pixel
             for(int x=0;x<FONT_CHAR_SIZE;x++){
-                if((bits>>(FONT_CHAR_SIZE-1-x))&1){
+                uint8_t gray=FONT_BITMAPS[i][y*FONT_CHAR_SIZE+x];
+                if(gray>0){
                     int idx=((row*FONT_CHAR_SIZE+y)*atlasW + (col*FONT_CHAR_SIZE+x))*4;
-                    data[idx]=255; data[idx+1]=255; data[idx+2]=255; data[idx+3]=255;
+                    data[idx]=255; data[idx+1]=255; data[idx+2]=255; data[idx+3]=gray;
                 }
             }
         }
     }
     glGenTextures(1,&g->texFont); glBindTexture(GL_TEXTURE_2D,g->texFont);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,atlasW,atlasH,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
     delete[] data;
@@ -121,7 +121,7 @@ static void sprite(GLuint t,float x,float y,float w,float h,bool flip=false){
     drawQuad(t,x,y,w,h,flip,1,1,1,1);
 }
 
-// UTF-8中文文本绘制 (16x16点阵字体)
+// UTF-8中文文本绘制 (24x24抗锯齿字体)
 static void text(float x,float y,const char* s,float sz,float r,float gg,float b,float a=1.f){
     int cols=16;
     int rows=(FONT_CHAR_COUNT+cols-1)/cols;
@@ -434,7 +434,7 @@ static void renderMain(){
     rect(bx,by,bw,bh,0.15f,0.5f,0.78f,0.9f);
     rect(bx,by,bw,2,0.3f,0.75f,0.95f,0.4f);
     text(cx-textW("点击开始",10)/2, by+8, "点击开始", 10, 1,1,1);
-    text(cx-textW("v6.0 像素版",6)/2, VH*0.9f, "v6.0 像素版", 6, 0.35f,0.35f,0.35f);
+    text(cx-textW("v8.0",6)/2, VH*0.9f, "v8.0", 6, 0.35f,0.35f,0.35f);
 }
 
 // ==================== 主渲染 ====================
