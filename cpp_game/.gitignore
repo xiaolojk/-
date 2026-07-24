@@ -1,0 +1,17 @@
+# 编译产物
+obj/
+libs/*/libgame.so
+
+# APK中间文件
+apk/*.apk
+!apk/LostBlueSea.apk
+apk/*.zip
+apk/staging/
+
+# 密钥
+apk/release.keystore
+
+# 系统文件
+.DS_Store
+*.swp
+*.swo
