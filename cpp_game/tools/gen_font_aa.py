@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 import os, re
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "jni", "font_data.h")
-CHAR_SIZE = 24  # 24x24 pixels per character - anti-aliased
+CHAR_SIZE = 16  # 16x16 pixels per character - anti-aliased (POT atlas)
 
 TEXTS = [
     "蓝色迷海点击开始生存冒险精美版",
@@ -41,10 +41,10 @@ for t in TEXTS:
 chars = sorted(chars)
 print(f"Total unique characters: {len(chars)}")
 
-font = ImageFont.truetype(FONT_PATH, CHAR_SIZE - 2)
+font = ImageFont.truetype(FONT_PATH, CHAR_SIZE - 1)
 
 def render_char_gray(ch):
-    """Render character as 24x24 grayscale (8bpp) for anti-aliased display."""
+    """Render character as 16x16 grayscale (8bpp) for anti-aliased display."""
     img = Image.new('L', (CHAR_SIZE, CHAR_SIZE), 0)
     draw = ImageDraw.Draw(img)
     bbox = draw.textbbox((0, 0), ch, font=font)
@@ -62,7 +62,7 @@ def render_char_gray(ch):
 
 # Generate C++ header with 8bpp encoding
 lines = []
-lines.append("// font_data.h - Anti-aliased Chinese bitmap font (8bpp, 24x24, SimHei)")
+lines.append("// font_data.h - Anti-aliased Chinese bitmap font (8bpp, 16x16, SimHei)")
 lines.append("#pragma once")
 lines.append("#include <cstdint>")
 lines.append("")
@@ -78,7 +78,7 @@ for i in range(0, len(chars), 16):
     lines.append(f"    {hex_str},")
 lines.append("};")
 lines.append("")
-lines.append(f"// Font bitmap data: {CHAR_SIZE}x{CHAR_SIZE} grayscale pixels per character (8bpp)")
+lines.append(f"// Font bitmap data: {CHAR_SIZE}x{CHAR_SIZE} grayscale pixels per character (8bpp anti-aliased)")
 lines.append(f"static const uint8_t FONT_BITMAPS[FONT_CHAR_COUNT][{CHAR_SIZE*CHAR_SIZE}] = {{")
 for ch in chars:
     gray = render_char_gray(ch)

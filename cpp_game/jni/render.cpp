@@ -74,11 +74,15 @@ void loadTextures(){
 
 // ==================== 字体加载 ====================
 void loadFont(){
-    // 创建字体纹理图集 (16列 x N行, 每字符24x24, 8bpp抗锯齿)
+    // 创建字体纹理图集 (16列 x N行, 每字符16x16, 8bpp抗锯齿)
+    // 使用POT纹理(256x512)确保所有GPU兼容
     int cols=16;
     int rows=(FONT_CHAR_COUNT+cols-1)/cols;
-    int atlasW=cols*FONT_CHAR_SIZE;
-    int atlasH=rows*FONT_CHAR_SIZE;
+    int charW=cols*FONT_CHAR_SIZE;   // 16*16=256 (POT)
+    int charH=rows*FONT_CHAR_SIZE;   // 19*16=304
+    // 填充到POT: 256x512
+    int atlasW=256;
+    int atlasH=512;
     uint8_t* data=new uint8_t[atlasW*atlasH*4];
     memset(data,0,atlasW*atlasH*4);
     for(int i=0;i<FONT_CHAR_COUNT;i++){
@@ -121,12 +125,12 @@ static void sprite(GLuint t,float x,float y,float w,float h,bool flip=false){
     drawQuad(t,x,y,w,h,flip,1,1,1,1);
 }
 
-// UTF-8中文文本绘制 (24x24抗锯齿字体)
+// UTF-8中文文本绘制 (16x16抗锯齿字体)
 static void text(float x,float y,const char* s,float sz,float r,float gg,float b,float a=1.f){
     int cols=16;
-    int rows=(FONT_CHAR_COUNT+cols-1)/cols;
-    float atlasW=(float)(cols*FONT_CHAR_SIZE);
-    float atlasH=(float)(rows*FONT_CHAR_SIZE);
+    // POT atlas尺寸 (256x512)
+    float atlasW=256.0f;
+    float atlasH=512.0f;
     float cx=x;
     for(const unsigned char* p=(const unsigned char*)s; *p; ){
         uint16_t unicode;
