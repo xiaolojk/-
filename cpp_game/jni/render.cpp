@@ -6,7 +6,6 @@
 #include <cstring>
 #include <jni.h>
 #include <android/log.h>
-#include <android_native_app_glue.h>
 
 // ==================== 着色器 ====================
 void setupGL(){
@@ -75,7 +74,8 @@ void loadTextures(){
 }
 
 // ==================== 字体系统 (Android系统字体) ====================
-// 通过JNI从Java端获取Android系统字体渲染的图集
+// Java端在onCreate时调用nativeSetFontData传入字体数据
+// C++在loadFont()时用这些数据生成GL纹理
 static const int MAX_FONT_CHARS = 512;
 static uint16_t g_fontUnicodes[MAX_FONT_CHARS];
 static int g_fontCount = 0;
@@ -84,6 +84,10 @@ static int g_fontCols = 16;
 static int g_fontAtlasW = 512;
 static int g_fontAtlasH = 1024;
 
+// Java传入的字体位图数据（loadFont时会释放）
+static uint8_t* g_fontData = nullptr;
+static int g_fontDataSize = 0;
+
 static int fontLookup(uint16_t unicode){
     for(int i=0;i<g_fontCount;i++){
         if(g_fontUnicodes[i]==unicode) return i;
@@ -91,94 +95,60 @@ static int fontLookup(uint16_t unicode){
     return -1;
 }
 
-void loadFont(){
-    // 通过JNI调用Java静态方法获取系统字体数据
-    JNIEnv* env = nullptr;
+// JNI: Java在onCreate时调用，传入字体数据（不做GL操作）
+extern "C" __attribute__((visibility("default")))
+void Java_com_orgc_lostbluesea_GameActivity_nativeSetFontData(
+    JNIEnv* env, jobject thiz,
+    jcharArray junicodes, jbyteArray jrgba,
+    jint atlasW, jint atlasH, jint charSize, jint cols){
 
-    extern struct android_app* g_app;
-    if(!g_app || !g_app->activity->vm){
-        __android_log_print(ANDROID_LOG_ERROR, "Game", "No JavaVM available for font");
-        return;
-    }
-    JavaVM* vm = g_app->activity->vm;
-    bool attached = false;
-    if(vm->GetEnv((void**)&env, JNI_VERSION_1_4) != JNI_OK){
-        if(vm->AttachCurrentThread(&env, nullptr) == JNI_OK){
-            attached = true;
-        } else {
-            __android_log_print(ANDROID_LOG_ERROR, "Game", "Failed to attach thread for font");
-            return;
-        }
-    }
-
-    // 用activity实例获取类引用(FindClass在native线程找不到应用类)
-    jclass cls = env->GetObjectClass(g_app->activity->clazz);
-    if(!cls){
-        __android_log_print(ANDROID_LOG_ERROR, "Game", "GameActivity class not found");
-        if(attached) vm->DetachCurrentThread();
-        return;
-    }
-
-    // 获取字符列表
-    jmethodID getUnicodes = env->GetStaticMethodID(cls, "getFontUnicodes", "()[C");
-    jmethodID getRgba = env->GetStaticMethodID(cls, "getFontRgba", "()[B");
-    jmethodID getW = env->GetStaticMethodID(cls, "getFontAtlasW", "()I");
-    jmethodID getH = env->GetStaticMethodID(cls, "getFontAtlasH", "()I");
-    jmethodID getSize = env->GetStaticMethodID(cls, "getFontSize", "()I");
-    jmethodID getCols = env->GetStaticMethodID(cls, "getFontCols", "()I");
-
-    if(!getUnicodes || !getRgba || !getW || !getH || !getSize || !getCols){
-        __android_log_print(ANDROID_LOG_ERROR, "Game", "Font methods not found");
-        if(attached) vm->DetachCurrentThread();
-        return;
-    }
-
-    jcharArray ju = (jcharArray)env->CallStaticObjectMethod(cls, getUnicodes);
-    jbyteArray jr = (jbyteArray)env->CallStaticObjectMethod(cls, getRgba);
-    int aw = env->CallStaticIntMethod(cls, getW);
-    int ah = env->CallStaticIntMethod(cls, getH);
-    int cs = env->CallStaticIntMethod(cls, getSize);
-    int cols = env->CallStaticIntMethod(cls, getCols);
-
-    if(!ju || !jr || aw<=0 || ah<=0){
-        __android_log_print(ANDROID_LOG_ERROR, "Game", "Font data not available");
-        if(attached) vm->DetachCurrentThread();
-        return;
-    }
-
-    // 提取unicode码点
-    jsize count = env->GetArrayLength(ju);
+    jsize count = env->GetArrayLength(junicodes);
     if(count > MAX_FONT_CHARS) count = MAX_FONT_CHARS;
-    jchar* uc = env->GetCharArrayElements(ju, nullptr);
-    for(int i=0;i<count;i++) g_fontUnicodes[i] = uc[i];
-    env->ReleaseCharArrayElements(ju, uc, JNI_ABORT);
 
-    // 提取RGBA数据
-    jbyte* rgba = env->GetByteArrayElements(jr, nullptr);
+    jchar* uc = env->GetCharArrayElements(junicodes, nullptr);
+    for(int i=0;i<count;i++) g_fontUnicodes[i] = uc[i];
+    env->ReleaseCharArrayElements(junicodes, uc, JNI_ABORT);
+
+    g_fontDataSize = env->GetArrayLength(jrgba);
+    g_fontData = new uint8_t[g_fontDataSize];
+    jbyte* rgba = env->GetByteArrayElements(jrgba, nullptr);
+    memcpy(g_fontData, rgba, g_fontDataSize);
+    env->ReleaseByteArrayElements(jrgba, rgba, JNI_ABORT);
 
     g_fontCount = count;
-    g_fontCharSize = cs;
+    g_fontCharSize = charSize;
     g_fontCols = cols;
-    g_fontAtlasW = aw;
-    g_fontAtlasH = ah;
+    g_fontAtlasW = atlasW;
+    g_fontAtlasH = atlasH;
 
-    // 生成字体纹理
+    __android_log_print(ANDROID_LOG_INFO, "Game", "Font data received: %d chars, %dx%d", count, atlasW, atlasH);
+}
+
+void loadFont(){
+    if(!g_fontData || g_fontCount==0){
+        __android_log_print(ANDROID_LOG_ERROR, "Game", "No font data, using fallback");
+        // 生成空白纹理避免崩溃
+        if(g->texFont==0) glGenTextures(1,&g->texFont);
+        glBindTexture(GL_TEXTURE_2D,g->texFont);
+        uint8_t px[4]={0,0,0,0};
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,1,1,0,GL_RGBA,GL_UNSIGNED_BYTE,px);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        return;
+    }
+
+    // 用Java传入的数据生成字体纹理
     if(g->texFont==0) glGenTextures(1,&g->texFont);
     glBindTexture(GL_TEXTURE_2D, g->texFont);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, aw, ah, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_fontAtlasW, g_fontAtlasH, 0, GL_RGBA, GL_UNSIGNED_BYTE, g_fontData);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    env->ReleaseByteArrayElements(jr, rgba, JNI_ABORT);
-    env->DeleteLocalRef(cls);
-    if(ju) env->DeleteLocalRef(ju);
-    if(jr) env->DeleteLocalRef(jr);
+    delete[] g_fontData; g_fontData=nullptr;
 
-    if(attached) vm->DetachCurrentThread();
-
-    __android_log_print(ANDROID_LOG_INFO, "Game", "System font loaded: %d chars, %dx%d atlas", count, aw, ah);
+    __android_log_print(ANDROID_LOG_INFO, "Game", "Font texture created: %d chars, %dx%d", g_fontCount, g_fontAtlasW, g_fontAtlasH);
 }
 
 // ==================== 绘制原语 (虚拟分辨率坐标) ====================

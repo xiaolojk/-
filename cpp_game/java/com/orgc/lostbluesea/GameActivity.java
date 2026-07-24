@@ -35,12 +35,6 @@ public class GameActivity extends NativeActivity {
         "出品已收集共个夜获得消耗耐久距离" +
         "拖拽按钮到想要的位置重置默认";
 
-    // 缓存字体数据，等C++端EGL初始化后取走
-    private static char[] sUnicodes = null;
-    private static byte[] sRgba = null;
-    private static int sAtlasW = 0;
-    private static int sAtlasH = 0;
-
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -51,67 +45,67 @@ public class GameActivity extends NativeActivity {
             | View.SYSTEM_UI_FLAG_FULLSCREEN
             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
-        // 预渲染字体图集（用Android系统字体）
         renderFontAtlas();
     }
 
     private void renderFontAtlas() {
-        int count = CHARS.length();
-        int rows = (count + ATLAS_COLS - 1) / ATLAS_COLS;
-        int atlasW = ATLAS_COLS * CHAR_SIZE;
-        int potH = 1;
-        while (potH < rows * CHAR_SIZE) potH *= 2;
-        int atlasH = potH;
+        try {
+            int count = CHARS.length();
+            int rows = (count + ATLAS_COLS - 1) / ATLAS_COLS;
+            int atlasW = ATLAS_COLS * CHAR_SIZE;
+            int potH = 1;
+            while (potH < rows * CHAR_SIZE) potH *= 2;
+            int atlasH = potH;
 
-        Bitmap bmp = Bitmap.createBitmap(atlasW, atlasH, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bmp);
-        canvas.drawColor(0x00000000);
+            Bitmap bmp = Bitmap.createBitmap(atlasW, atlasH, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bmp);
+            canvas.drawColor(0x00000000);
 
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTypeface(Typeface.DEFAULT);
-        paint.setTextSize(CHAR_SIZE - 4);
-        paint.setColor(0xFFFFFFFF);
-        paint.setSubpixelText(true);
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setTypeface(Typeface.DEFAULT);
+            paint.setTextSize(CHAR_SIZE - 4);
+            paint.setColor(0xFFFFFFFF);
+            paint.setSubpixelText(true);
 
-        float cx = CHAR_SIZE / 2f;
-        float cy = CHAR_SIZE - 6f;
+            float cx = CHAR_SIZE / 2f;
+            float cy = CHAR_SIZE - 6f;
 
-        for (int i = 0; i < count; i++) {
-            int col = i % ATLAS_COLS;
-            int row = i / ATLAS_COLS;
-            float x = col * CHAR_SIZE + cx;
-            float y = row * CHAR_SIZE + cy;
-            canvas.drawText(CHARS, i, i + 1, x, y, paint);
+            for (int i = 0; i < count; i++) {
+                int col = i % ATLAS_COLS;
+                int row = i / ATLAS_COLS;
+                float x = col * CHAR_SIZE + cx;
+                float y = row * CHAR_SIZE + cy;
+                canvas.drawText(CHARS, i, i + 1, x, y, paint);
+            }
+
+            int[] pixels = new int[atlasW * atlasH];
+            bmp.getPixels(pixels, 0, atlasW, 0, 0, atlasW, atlasH);
+            bmp.recycle();
+
+            byte[] rgba = new byte[atlasW * atlasH * 4];
+            for (int i = 0; i < pixels.length; i++) {
+                int p = pixels[i];
+                rgba[i * 4]     = (byte) ((p >> 16) & 0xFF);
+                rgba[i * 4 + 1] = (byte) ((p >> 8) & 0xFF);
+                rgba[i * 4 + 2] = (byte) (p & 0xFF);
+                rgba[i * 4 + 3] = (byte) ((p >> 24) & 0xFF);
+            }
+
+            char[] unicodes = new char[count];
+            for (int i = 0; i < count; i++) {
+                unicodes[i] = CHARS.charAt(i);
+            }
+
+            // 调用native方法传入字体数据（不做GL操作）
+            nativeSetFontData(unicodes, rgba, atlasW, atlasH, CHAR_SIZE, ATLAS_COLS);
+        } catch (Exception e) {
+            android.util.Log.e("Game", "Font rendering failed", e);
         }
-
-        int[] pixels = new int[atlasW * atlasH];
-        bmp.getPixels(pixels, 0, atlasW, 0, 0, atlasW, atlasH);
-
-        byte[] rgba = new byte[atlasW * atlasH * 4];
-        for (int i = 0; i < pixels.length; i++) {
-            int p = pixels[i];
-            rgba[i * 4]     = (byte) ((p >> 16) & 0xFF);
-            rgba[i * 4 + 1] = (byte) ((p >> 8) & 0xFF);
-            rgba[i * 4 + 2] = (byte) (p & 0xFF);
-            rgba[i * 4 + 3] = (byte) ((p >> 24) & 0xFF);
-        }
-
-        sUnicodes = new char[count];
-        for (int i = 0; i < count; i++) {
-            sUnicodes[i] = CHARS.charAt(i);
-        }
-        sRgba = rgba;
-        sAtlasW = atlasW;
-        sAtlasH = atlasH;
     }
 
-    // C++通过JNI调用此方法获取字体数据
-    public static char[] getFontUnicodes() { return sUnicodes; }
-    public static byte[] getFontRgba() { return sRgba; }
-    public static int getFontAtlasW() { return sAtlasW; }
-    public static int getFontAtlasH() { return sAtlasH; }
-    public static int getFontSize() { return CHAR_SIZE; }
-    public static int getFontCols() { return ATLAS_COLS; }
+    private native void nativeSetFontData(char[] unicodes, byte[] rgba,
+                                          int atlasW, int atlasH,
+                                          int charSize, int cols);
 }
