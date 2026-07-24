@@ -547,9 +547,11 @@ void render(){
     glUniform1f(g->uW,(float)g->scrW); glUniform1f(g->uH,(float)g->scrH);
 
     // 绘制FBO纹理到视口区域 (GL_NEAREST = 像素化)
+    // 注意: OpenGL纹理V=0是底部, V=1是顶部; FBO渲染时游戏y=0在FBO顶部
+    // 所以屏幕顶部对应V=1(纹理顶部), 屏幕底部对应V=0(纹理底部)
     float vx=(float)g->viewX, vy=(float)g->viewY, vw=(float)g->viewW, vh=(float)g->viewH;
-    float v[]={ vx,vy,0,0,1,1,1,1, vx+vw,vy,1,0,1,1,1,1,
-                vx,vy+vh,0,1,1,1,1,1, vx+vw,vy+vh,1,1,1,1,1,1 };
+    float v[]={ vx,vy,0,1,1,1,1,1, vx+vw,vy,1,1,1,1,1,1,
+                vx,vy+vh,0,0,1,1,1,1, vx+vw,vy+vh,1,0,1,1,1,1 };
     glBindTexture(GL_TEXTURE_2D,g->fboTex);
     glVertexAttribPointer(g->aPos,2,GL_FLOAT,GL_FALSE,32,v);
     glVertexAttribPointer(g->aUV,2,GL_FLOAT,GL_FALSE,32,v+2);
