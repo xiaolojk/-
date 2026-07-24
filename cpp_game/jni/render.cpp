@@ -1,11 +1,11 @@
-// render.cpp - GLES2 渲染
+// render.cpp - GLES2 渲染（精美版）
 #include "game.h"
 #include "sprites.h"
 #include <GLES2/gl2.h>
 #include <cmath>
 #include <cstring>
 
-// ==================== 5x7 字体 (A-Z 0-9 符号) ====================
+// ==================== 5x7 字体 ====================
 static const uint8_t FONT[128][7] = {
     [' ']={0,0,0,0,0,0,0},
     ['!']={0,0,0x1F,0,0,0x1F,0},
@@ -76,7 +76,6 @@ void setupGL(){
     glEnableVertexAttribArray(g->aPos); glEnableVertexAttribArray(g->aUV); glEnableVertexAttribArray(g->aColor);
     glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
-    // 1x1 白纹理
     uint8_t w[4]={255,255,255,255};
     glGenTextures(1,&g->texWhite); glBindTexture(GL_TEXTURE_2D,g->texWhite);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,1,1,0,GL_RGBA,GL_UNSIGNED_BYTE,w);
@@ -141,7 +140,6 @@ static void rect(float x,float y,float w,float h,float r,float gg,float b,float 
 static void sprite(GLuint t,float x,float y,float w,float h,bool flip=false){
     drawQuad(t,x,y,w,h,flip,1,1,1,1);
 }
-
 static void text(float x,float y,const char* s,float sc,float r,float gg,float b){
     float cx=x;
     for(const unsigned char* p=(const unsigned char*)s; *p; p++){
@@ -187,23 +185,28 @@ static void renderWorld(){
                     break;
             }
         } else if(y>SURFACE_Y){
-            rect(px,py,TILE,TILE,0.1f,0.05f,0.02f,1); // 地下背景
+            // 地下渐变背景
+            float depth = (y - SURFACE_Y) / (float)(WORLD_H - SURFACE_Y);
+            float br = 0.12f - depth * 0.08f;
+            float bg = 0.06f - depth * 0.04f;
+            float bb = 0.03f - depth * 0.02f;
+            rect(px,py,TILE,TILE, br, bg, bb, 1);
         }
         if(w==W_TREE){ sprite(g->texTree,px,py-TILE,TILE,TILE*2); }
         else if(w==W_BERRY){ sprite(g->texBerry,px,py,TILE,TILE); }
         else if(w==W_CLUE){
             float pulse=0.7f+0.3f*sinf(g->gameTime*3);
             drawQuad(g->texClue,px,py,TILE,TILE,false,pulse,pulse,pulse,pulse);
-            text(px+11,py+9,"?",2,0,0,0);
+            text(px+10,py+8,"?",2.2f,0.3f,0.2f,0.1f);
         }
     }
     // 挖掘高亮
     if(g->mineTX>=0){
         float mx=g->mineTX*TILE-g->camX, my=g->mineTY*TILE-g->camY;
-        rect(mx,my,TILE,TILE,1,0.6f,0,0.3f);
+        float glow = 0.3f + 0.1f*sinf(g->gameTime*8);
+        rect(mx,my,TILE,TILE,1,0.7f,0.2f,glow);
         int t=getTileAt(g->mineTX,g->mineTY);
         float pct=g->mineProg/mineTime(t);
-        // 裂纹
         float dk=pct*0.7f;
         rect(mx+6,my+6,4,1,0,0,0,dk);
         rect(mx+14,my+12,6,1,0,0,0,dk);
@@ -220,59 +223,74 @@ static void renderPlayer(){
     else ti=0;
     float px=p.x-16-g->camX, py=p.y-48-g->camY;
     bool flip = p.facing<0;
-    // 闪烁
     if(p.invinceTimer>0 && ((int)(p.invinceTimer*10))%2==0) return;
     sprite(g->texPlayer[ti],px,py,32,48,flip);
     if(p.hasRadSuit){
-        rect(px+4,py,24,48,1,0.8f,0.2f,0.25f);
+        rect(px+4,py,24,48,1,0.85f,0.25f,0.25f);
     }
 }
 
 static void renderParticles(){
     for(auto& pa:g->parts){
         float a=std::min(1.f,pa.life/0.4f);
-        rect(pa.x-2-g->camX,pa.y-2-g->camY,4,4,pa.r/255.f,pa.g/255.f,pa.b/255.f,a);
+        float sz = 3.0f + pa.life * 2.0f;
+        rect(pa.x-sz-g->camX, pa.y-sz-g->camY, sz*2, sz*2, pa.r/255.f, pa.g/255.f, pa.b/255.f, a);
     }
 }
 
 // ==================== UI ====================
 static void drawBtn(const Btn& b,bool active){
     float x=b.x*g->scrW, y=b.y*g->scrH, w=b.w*g->scrW, h=b.h*g->scrH;
-    rect(x,y,w,h,0,0,0,0.5f);
-    rect(x+2,y+2,w-4,h-4, active?0.4f:0.2f, active?0.4f:0.2f, active?0.4f:0.25f, 0.8f);
+    rect(x,y,w,h,0,0,0,0.55f);
+    float cr = active?0.35f:0.18f, cg = active?0.55f:0.18f, cb = active?0.75f:0.22f;
+    rect(x+2,y+2,w-4,h-4, cr, cg, cb, 0.85f);
+    // 顶部高光
+    rect(x+2,y+2,w-4,3, cr+0.15f, cg+0.15f, cb+0.15f, 0.3f);
     // 边框
-    rect(x,y,w,2,0.6f,0.8f,1,0.6f); rect(x,y+h-2,w,2,0.6f,0.8f,1,0.6f);
-    rect(x,y,2,h,0.6f,0.8f,1,0.6f); rect(x+w-2,y,2,h,0.6f,0.8f,1,0.6f);
-    // 标签
+    rect(x,y,w,2,0.4f,0.7f,0.95f,0.7f);
+    rect(x,y+h-2,w,2,0.4f,0.7f,0.95f,0.7f);
+    rect(x,y,2,h,0.4f,0.7f,0.95f,0.7f);
+    rect(x+w-2,y,2,h,0.4f,0.7f,0.95f,0.7f);
     float ts = h*0.35f;
     float tw = strlen(b.label)*6*ts;
     text(x+(w-tw)/2, y+(h-7*ts)/2, b.label, ts, 1,1,1);
 }
 
 static void renderHUD(){
-    // 状态条
+    float pad = g->scrW * 0.008f;
+    float barW = g->scrW * 0.18f;
+    float barX = pad;
+    float barH = 16;
     auto bar=[&](const char* lbl,float v,float m,float r,float gg,float b,float y){
-        rect(10,y,150,18,0,0,0,0.6f);
-        rect(12,y+2,140,4,0.15f,0.15f,0.15f,1);
-        rect(12,y+2,140*(v/m),4,r,gg,b,1);
-        if(v/m<0.25f && sinf(g->gameTime*6)>0) rect(12,y+2,140*(v/m),4,1,0,0,0.6f);
-        text(12,y+8,lbl,1.4f,1,1,1);
-        num(120,y+8,(int)v,1.4f,1,1,1);
+        rect(barX, y, barW, barH, 0, 0, 0, 0.65f);
+        rect(barX+2, y+2, barW-4, 3, 0.1f, 0.1f, 0.1f, 1);
+        float pct = v / m;
+        if(pct > 0) rect(barX+2, y+2, (barW-4)*pct, 3, r, gg, b, 1);
+        if(pct < 0.25f && sinf(g->gameTime*6)>0) rect(barX+2, y+2, (barW-4)*pct, 3, 1, 0.1f, 0.1f, 0.7f);
+        text(barX+4, y+7, lbl, 1.2f, 1, 1, 1);
+        num(barX + barW - 32, y+7, (int)v, 1.2f, 1, 1, 1);
     };
-    bar("HP",g->p.hp,g->p.maxHp,0.9f,0.2f,0.2f,10);
-    bar("HUN",g->p.hunger,g->p.maxHunger,1,0.6f,0,32);
-    bar("THR",g->p.thirst,g->p.maxThirst,0.1f,0.6f,1,54);
-    bar("RAD",g->p.rad,g->p.maxRad,1,0.9f,0.1f,76);
+    bar("HP", g->p.hp, g->p.maxHp, 0.95f, 0.2f, 0.2f, pad);
+    bar("HUNGER", g->p.hunger, g->p.maxHunger, 1, 0.6f, 0, pad + 20);
+    bar("THIRST", g->p.thirst, g->p.maxThirst, 0.15f, 0.65f, 1, pad + 40);
+    bar("RAD", g->p.rad, g->p.maxRad, 1, 0.85f, 0.1f, pad + 60);
+    
     // 水警告
     if(g->p.inWater){
-        text(g->scrW/2-60,g->scrH-180,"! RADIATION WATER !",2.2f,1,0.2f,0);
+        float wx = g->scrW/2 - 100;
+        float wy = g->scrH - 170;
+        rect(wx-5, wy-5, 210, 28, 0, 0, 0, 0.7f);
+        rect(wx, wy, 200, 18, 0.9f, 0.15f, 0.05f, 0.8f);
+        text(wx + 10, wy + 4, "RADIATION WATER!", 1.6f, 1, 0.9f, 0.7f);
     }
+    
     // 线索计数
-    rect(g->scrW-95,10,85,20,0,0,0,0.6f);
-    text(g->scrW-88,16,"CLUE:",1.5f,1,0.8f,0);
-    num(g->scrW-40,16,g->foundClues,1.5f,1,0.8f,0);
-    text(g->scrW-25,16,"/",1.5f,1,0.8f,0);
-    num(g->scrW-18,16,g->clueCount,1.5f,1,0.8f,0);
+    float cx = g->scrW - 130;
+    rect(cx, pad, 122, 18, 0, 0, 0, 0.65f);
+    text(cx + 4, pad + 4, "CLUES:", 1.3f, 1, 0.85f, 0.3f);
+    num(cx + 60, pad + 4, g->foundClues, 1.3f, 1, 0.85f, 0.3f);
+    text(cx + 78, pad + 4, "/", 1.3f, 0.7f, 0.7f, 0.7f);
+    num(cx + 88, pad + 4, g->clueCount, 1.3f, 0.7f, 0.7f, 0.7f);
 }
 
 static const char* ITEM_NAME(int id){
@@ -290,55 +308,55 @@ static const char* ITEM_NAME(int id){
 
 static void renderPanel(){
     float sw=g->scrW, sh=g->scrH;
-    rect(sw*0.08f,sh*0.15f,sw*0.84f,sh*0.7f,0,0,0,0.92f);
-    rect(sw*0.08f,sh*0.15f,sw*0.84f,2,0.3f,0.75f,0.95f,1);
-    rect(sw*0.08f,sh*0.15f,2,sh*0.7f,0.3f,0.75f,0.95f,1);
-    float ry=sh*0.22f, lh=sh*0.07f;
+    float px = sw*0.06f, py = sh*0.12f, pw = sw*0.88f, ph = sh*0.76f;
+    rect(px, py, pw, ph, 0.02f, 0.06f, 0.14f, 0.94f);
+    // 顶部装饰线
+    rect(px, py, pw, 3, 0.25f, 0.7f, 0.95f, 1);
+    rect(px, py, 3, ph, 0.25f, 0.7f, 0.95f, 1);
+    float ry=sh*0.2f, lh=sh*0.065f;
     if(g->showInv){
-        text(sw*0.12f,sh*0.17f,"INVENTORY",2.2f,0.3f,0.75f,0.95f);
+        text(sw*0.1f, sh*0.14f, "INVENTORY", 2.2f, 0.25f, 0.7f, 0.95f);
         g->invDisplayCount=0;
         int row=0;
         for(int id=1;id<I_COUNT;id++){
             if(g->inv[id]>0){
                 float yy=ry+row*lh;
-                if(row%2) rect(sw*0.1f,yy,sw*0.8f,lh,1,1,1,0.05f);
-                text(sw*0.12f,yy+lh*0.2f,ITEM_NAME(id),1.6f,0.8f,0.85f,1);
-                num(sw*0.6f,yy+lh*0.2f,g->inv[id],1.6f,1,1,1);
-                // 可用提示
+                if(row%2) rect(sw*0.08f, yy, sw*0.84f, lh, 1, 1, 1, 0.04f);
+                text(sw*0.1f, yy+lh*0.2f, ITEM_NAME(id), 1.6f, 0.8f, 0.85f, 1);
+                num(sw*0.58f, yy+lh*0.2f, g->inv[id], 1.6f, 1, 1, 1);
                 bool useable=(id==I_BERRY||id==I_CBERRY||id==I_FWATER||id==I_PWATER||id==I_BANDAGE);
-                if(useable) text(sw*0.72f,yy+lh*0.2f,"TAP USE",1.4f,0.3f,1,0.3f);
+                if(useable) text(sw*0.7f, yy+lh*0.2f, "TAP USE", 1.4f, 0.3f, 1, 0.3f);
                 if(g->invDisplayCount<24) g->invDisplay[g->invDisplayCount++]=id;
                 row++;
                 if(row>10) break;
             }
         }
-        if(row==0) text(sw*0.3f,sh*0.4f,"EMPTY",2.5f,0.5f,0.5f,0.5f);
+        if(row==0) text(sw*0.3f, sh*0.4f, "EMPTY", 2.5f, 0.5f, 0.5f, 0.5f);
     } else if(g->showCraft){
-        text(sw*0.12f,sh*0.17f,"CRAFT",2.2f,0.3f,0.75f,0.95f);
+        text(sw*0.1f, sh*0.14f, "CRAFTING", 2.2f, 0.25f, 0.7f, 0.95f);
         for(int i=0;i<RECIPE_COUNT && i<11;i++){
             Recipe& r=RECIPES[i];
             float yy=ry+i*lh;
             bool can=true;
             for(int k=0;k<4;k++){ if(r.req[k][0]<0)break; if(g->inv[r.req[k][0]]<r.req[k][1]) can=false; }
-            if(i%2) rect(sw*0.1f,yy,sw*0.8f,lh,1,1,1,0.05f);
+            if(i%2) rect(sw*0.08f, yy, sw*0.84f, lh, 1, 1, 1, 0.04f);
             float col = can?1:0.4f;
-            text(sw*0.12f,yy+lh*0.2f,r.name,1.5f,col,col*0.85f,col*0.4f);
-            // 材料简写
+            text(sw*0.1f, yy+lh*0.2f, r.name, 1.5f, col, col*0.85f, col*0.4f);
             char buf[64]; buf[0]=0;
             for(int k=0;k<4;k++){ if(r.req[k][0]<0)break;
                 char b2[16]; snprintf(b2,16,"%s%d ",ITEM_NAME(r.req[k][0]),r.req[k][1]); strcat(buf,b2);
             }
-            text(sw*0.42f,yy+lh*0.2f,buf,1.2f,0.7f,0.7f,0.7f);
-            if(can) text(sw*0.82f,yy+lh*0.2f,"TAP",1.4f,0.3f,1,0.3f);
+            text(sw*0.4f, yy+lh*0.2f, buf, 1.2f, 0.7f, 0.7f, 0.7f);
+            if(can) text(sw*0.82f, yy+lh*0.2f, "TAP", 1.4f, 0.3f, 1, 0.3f);
         }
     } else if(g->showMenu){
-        text(sw*0.35f,sh*0.25f,"PAUSED",3,0.3f,0.75f,0.95f);
-        rect(sw*0.2f,sh*0.4f,sw*0.6f,sh*0.06f,0.2f,0.5f,0.2f,0.8f);
-        text(sw*0.42f,sh*0.42f,"RESUME",2,1,1,1);
-        rect(sw*0.2f,sh*0.5f,sw*0.6f,sh*0.06f,0.5f,0.3f,0.2f,0.8f);
-        text(sw*0.4f,sh*0.52f,"RESTART",2,1,1,1);
-        rect(sw*0.2f,sh*0.6f,sw*0.6f,sh*0.06f,0.3f,0.3f,0.3f,0.8f);
-        text(sw*0.42f,sh*0.62f,"QUIT",2,1,1,1);
+        text(sw*0.32f, sh*0.22f, "PAUSED", 3.5f, 0.25f, 0.7f, 0.95f);
+        rect(sw*0.2f, sh*0.38f, sw*0.6f, sh*0.06f, 0.15f, 0.5f, 0.25f, 0.85f);
+        text(sw*0.4f, sh*0.4f, "RESUME", 2, 1, 1, 1);
+        rect(sw*0.2f, sh*0.48f, sw*0.6f, sh*0.06f, 0.5f, 0.35f, 0.15f, 0.85f);
+        text(sw*0.4f, sh*0.5f, "RESTART", 2, 1, 1, 1);
+        rect(sw*0.2f, sh*0.58f, sw*0.6f, sh*0.06f, 0.25f, 0.25f, 0.25f, 0.85f);
+        text(sw*0.42f, sh*0.6f, "QUIT", 2, 1, 1, 1);
     }
 }
 
@@ -347,35 +365,63 @@ void render(){
     glViewport(0,0,g->scrW,g->scrH);
     glClear(GL_COLOR_BUFFER_BIT);
     glUniform1f(g->uW,(float)g->scrW); glUniform1f(g->uH,(float)g->scrH);
+    
     // 天空渐变
-    if(g->dayNight>0.5f){
-        drawQuadG(0,0,g->scrW,g->scrH, 0.3f,0.7f,0.95f,1, 0.7f,0.9f,1,1);
+    float dn = g->dayNight;
+    if(dn > 0.5f){
+        // 白天天空
+        drawQuadG(0,0,g->scrW,g->scrH*0.7f, 0.28f,0.65f,0.92f,1, 0.65f,0.88f,1,1);
+        // 云朵
+        for(int i=0;i<6;i++){
+            float cx = fmodf(g->scrW*0.15f*i + g->gameTime*15, g->scrW+200) - 100;
+            float cy = 40 + i*35;
+            float ca = 0.3f + 0.15f*sinf(g->gameTime*0.5f+i);
+            rect(cx-20, cy, 60, 12, 1, 1, 1, ca);
+            rect(cx-10, cy-6, 50, 10, 1, 1, 1, ca*0.8f);
+            rect(cx, cy-10, 30, 8, 1, 1, 1, ca*0.6f);
+        }
     } else {
-        drawQuadG(0,0,g->scrW,g->scrH, 0.04f,0.09f,0.16f,1, 0.1f,0.22f,0.36f,1);
+        // 夜晚天空
+        drawQuadG(0,0,g->scrW,g->scrH*0.7f, 0.03f,0.07f,0.14f,1, 0.08f,0.18f,0.32f,1);
+        // 星星
+        for(int i=0;i<60;i++){
+            int sx=(i*7919)%g->scrW, sy=(i*6271)%(int)(g->scrH*0.5f);
+            float tw=0.4f+0.6f*sinf(g->gameTime*1.5f+i*0.7f);
+            rect(sx, sy, 2, 2, 1, 1, 1, tw*(0.5f-dn));
+        }
     }
     // 太阳/月亮
-    if(g->dayNight>0.7f){
-        rect(g->scrW-80,40,40,40,1,0.9f,0.3f,0.7f);
-        rect(g->scrW-75,45,30,30,1,0.95f,0.5f,0.5f);
-    } else if(g->dayNight<0.3f){
-        rect(g->scrW-70,40,30,30,0.9f,0.9f,0.9f,0.8f);
-        // 星星
-        for(int i=0;i<40;i++){
-            int sx=(i*7919)%g->scrW, sy=(i*6271)%(g->scrH/3);
-            float tw=0.5f+0.5f*sinf(g->gameTime*2+i);
-            rect(sx,sy,2,2,1,1,1,tw*(0.4f-g->dayNight));
-        }
+    float celX = g->scrW - 70;
+    if(dn > 0.6f){
+        // 太阳
+        float sr = 22 + 3*sinf(g->gameTime*0.3f);
+        rect(celX-sr, 35, sr*2, sr*2, 1, 0.85f, 0.25f, 0.6f);
+        rect(celX-sr+4, 39, sr*2-8, sr*2-8, 1, 0.92f, 0.4f, 0.5f);
+    } else if(dn < 0.4f){
+        float mr = 15;
+        rect(celX-mr, 38, mr*2, mr*2, 0.85f, 0.85f, 0.9f, 0.8f);
+        rect(celX-mr+2, 40, mr*2-4, mr*2-4, 0.92f, 0.92f, 0.95f, 0.7f);
     }
 
     if(g->showMain){
-        // 主菜单
-        rect(0,0,g->scrW,g->scrH,0.04f,0.09f,0.16f,1);
+        // 主菜单（精美版）
+        drawQuadG(0,0,g->scrW,g->scrH, 0.03f,0.08f,0.16f,1, 0.06f,0.15f,0.28f,1);
         float cx=g->scrW/2;
-        text(cx-150,g->scrH*0.3f,"LOST BLUE SEA",4,0.3f,0.75f,0.95f);
-        text(cx-80,g->scrH*0.4f,"ORGC",2.5f,0.6f,0.6f,0.6f);
-        rect(cx-100,g->scrH*0.55f,200,60,0.2f,0.5f,0.8f,0.9f);
-        text(cx-55,g->scrH*0.57f,"TAP START",2.2f,1,1,1);
-        text(cx-120,g->scrH*0.85f,"V4.0 CPP NATIVE",1.5f,0.4f,0.4f,0.4f);
+        // 装饰线
+        rect(cx-180, g->scrH*0.28f, 360, 2, 0.25f, 0.7f, 0.95f, 0.6f);
+        text(cx-170, g->scrH*0.3f, "LOST BLUE SEA", 4.5f, 0.25f, 0.7f, 0.95f);
+        rect(cx-180, g->scrH*0.38f, 360, 2, 0.25f, 0.7f, 0.95f, 0.6f);
+        text(cx-65, g->scrH*0.42f, "ORGC", 2.2f, 0.5f, 0.5f, 0.55f);
+        text(cx-155, g->scrH*0.48f, "SURVIVAL ADVENTURE", 1.6f, 0.4f, 0.5f, 0.5f);
+        // 开始按钮
+        float bw = 220, bh = 55;
+        float bx = cx - bw/2, by = g->scrH*0.58f;
+        float pulse = 0.9f + 0.1f*sinf(g->gameTime*3);
+        rect(bx-2, by-2, bw+4, bh+4, 0.25f, 0.7f, 0.95f, pulse*0.5f);
+        rect(bx, by, bw, bh, 0.15f, 0.5f, 0.78f, 0.9f);
+        rect(bx, by, bw, 4, 0.3f, 0.75f, 0.95f, 0.4f);
+        text(cx-55, by+14, "TAP TO START", 2.2f, 1, 1, 1);
+        text(cx-130, g->scrH*0.88f, "V5.0  HD EDITION", 1.4f, 0.35f, 0.35f, 0.35f);
         return;
     }
 
@@ -384,10 +430,9 @@ void render(){
     renderParticles();
 
     // 夜晚遮罩
-    if(g->dayNight<0.35f) rect(0,0,g->scrW,g->scrH,0,0,0.1f,0.4f-g->dayNight);
+    if(dn < 0.35f) rect(0,0,g->scrW,g->scrH,0,0,0.08f,0.4f-dn);
 
     renderHUD();
-    // 按钮
     drawBtn(BTNS[0],g->touchLeft);
     drawBtn(BTNS[1],g->touchRight);
     drawBtn(BTNS[2],g->touchJump);
@@ -396,20 +441,25 @@ void render(){
     drawBtn(BTNS[5],g->showInv);
     drawBtn(BTNS[6],g->showCraft);
     drawBtn(BTNS[7],g->showMenu);
-    // 挖掘进度
+    
+    // 挖掘进度条
     if(g->mineTX>=0){
         int t=getTileAt(g->mineTX,g->mineTY);
         float pct=std::min(1.f,g->mineProg/mineTime(t));
-        rect(g->scrW/2-50,g->scrH-140,100,10,0,0,0,0.6f);
-        rect(g->scrW/2-48,g->scrH-138,96*pct,6,1,0.6f,0,1);
+        float pw = 120;
+        rect(g->scrW/2-pw/2, g->scrH-145, pw, 12, 0, 0, 0, 0.7f);
+        rect(g->scrW/2-pw/2+2, g->scrH-143, (pw-4)*pct, 8, 1, 0.55f, 0, 1);
+        text(g->scrW/2-20, g->scrH-130, "MINING", 1.3f, 1, 0.7f, 0.3f);
     }
+    
     // toast
     if(g->toast>0){
-        // 只画ASCII部分
         float tw=strnlen(g->toastText,40)*6*1.6f;
-        rect(g->scrW/2-tw/2-10,g->scrH-200,tw+20,28,0,0,0,0.8f);
-        text(g->scrW/2-tw/2,g->scrH-194,g->toastText,1.6f,0.3f,0.75f,0.95f);
+        float ty = g->scrH-200;
+        rect(g->scrW/2-tw/2-12, ty-2, tw+24, 28, 0, 0, 0, 0.85f);
+        rect(g->scrW/2-tw/2-12, ty-2, tw+24, 2, 0.25f, 0.7f, 0.95f, 0.8f);
+        text(g->scrW/2-tw/2, ty+4, g->toastText, 1.6f, 0.25f, 0.7f, 0.95f);
     }
-    // 面板
+    
     if(g->showInv||g->showCraft||g->showMenu) renderPanel();
 }
