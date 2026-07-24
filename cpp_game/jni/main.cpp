@@ -1,8 +1,7 @@
-// main.cpp - 游戏逻辑 + 入口
+// main.cpp - 游戏逻辑 + 入口 (v6.0 像素中文版)
 #include "game.h"
 #include <android_native_app_glue.h>
 #include <android/log.h>
-#include <android/window.h>
 #include <time.h>
 #include <cmath>
 #include <cstring>
@@ -13,32 +12,32 @@
 
 Game* g=nullptr;
 
-// 按钮(比例坐标): 0left 1right 2jump 3mine 4interact 5inv 6craft 7menu
+// 按钮(虚拟分辨率坐标480x270): 0左 1右 2跳 3挖 4用 5背包 6制作 7菜单
 Btn BTNS[8] = {
-    {0.02f,0.80f,0.13f,0.16f,"<"},
-    {0.16f,0.80f,0.13f,0.16f,">"},
-    {0.30f,0.80f,0.13f,0.16f,"跳"},
-    {0.72f,0.80f,0.13f,0.16f,"挖"},
-    {0.86f,0.80f,0.12f,0.16f,"用"},
-    {0.40f,0.02f,0.13f,0.05f,"背包"},
-    {0.54f,0.02f,0.13f,0.05f,"制作"},
-    {0.68f,0.02f,0.13f,0.05f,"菜单"},
+    {10,  220, 60, 45, "←"},
+    {78,  220, 60, 45, "→"},
+    {146, 220, 60, 45, "跳"},
+    {354, 220, 60, 45, "挖"},
+    {420, 220, 50, 45, "用"},
+    {180, 4,   60, 16, "背包"},
+    {244, 4,   60, 16, "制作"},
+    {308, 4,   60, 16, "菜单"},
 };
 
 Recipe RECIPES[] = {
-    {"木板",  I_PLANK,  {{I_WOOD,1},{-1,0},{0,0},{0,0}},        {I_PLANK,4}},
-    {"木棍",  I_STICK,  {{I_PLANK,1},{-1,0},{0,0},{0,0}},       {I_STICK,4}},
-    {"火把",  I_TORCH,  {{I_STICK,1},{I_COAL,1},{-1,0},{0,0}},  {I_TORCH,4}},
-    {"篝火",  I_CAMP,   {{I_STICK,4},{I_PLANK,2},{I_STONE,1},{-1,0}},{I_CAMP,1}},
-    {"绷带",  I_BANDAGE,{{I_STICK,1},{I_PLANK,1},{-1,0},{0,0}}, {I_BANDAGE,1}},
-    {"镐子",  I_PICK,   {{I_STICK,2},{I_PLANK,2},{I_STONE,1},{-1,0}},{I_PICK,1}},
-    {"净水器",I_FILTER, {{I_STONE,3},{I_PLANK,2},{I_STICK,2},{-1,0}},{I_FILTER,1}},
-    {"木筏",  I_RAFT,   {{I_PLANK,6},{I_STICK,4},{-1,0},{0,0}}, {I_RAFT,1}},
-    {"防辐射服",I_RSUIT,{{I_PLANK,4},{I_STONE,2},{I_STICK,2},{-1,0}},{I_RSUIT,1}},
-    {"熟浆果",I_CBERRY, {{I_BERRY,3},{I_CAMP,1},{-1,0},{0,0}},  {I_CBERRY,1}},
-    {"纯净水",I_PWATER, {{I_FWATER,3},{I_FILTER,1},{-1,0},{0,0}},{I_PWATER,1}},
-    {"铁锭",  I_INGOT,  {{I_IRON,3},{I_CAMP,1},{I_COAL,1},{-1,0}},{I_INGOT,1}},
-    {"铁镐",  I_IPICK,  {{I_INGOT,2},{I_STICK,2},{I_PLANK,1},{-1,0}},{I_IPICK,1}},
+    {"木板",    I_PLANK,  {{I_WOOD,1},{-1,0},{0,0},{0,0}},        {I_PLANK,4}},
+    {"木棍",    I_STICK,  {{I_PLANK,1},{-1,0},{0,0},{0,0}},       {I_STICK,4}},
+    {"火把",    I_TORCH,  {{I_STICK,1},{I_COAL,1},{-1,0},{0,0}},  {I_TORCH,4}},
+    {"篝火",    I_CAMP,   {{I_STICK,4},{I_PLANK,2},{I_STONE,1},{-1,0}},{I_CAMP,1}},
+    {"绷带",    I_BANDAGE,{{I_STICK,1},{I_PLANK,1},{-1,0},{0,0}}, {I_BANDAGE,1}},
+    {"镐子",    I_PICK,   {{I_STICK,2},{I_PLANK,2},{I_STONE,1},{-1,0}},{I_PICK,1}},
+    {"净水器",  I_FILTER, {{I_STONE,3},{I_PLANK,2},{I_STICK,2},{-1,0}},{I_FILTER,1}},
+    {"木筏",    I_RAFT,   {{I_PLANK,6},{I_STICK,4},{-1,0},{0,0}}, {I_RAFT,1}},
+    {"防辐射服",I_RSUIT,  {{I_PLANK,4},{I_STONE,2},{I_STICK,2},{-1,0}},{I_RSUIT,1}},
+    {"熟浆果",  I_CBERRY, {{I_BERRY,3},{I_CAMP,1},{-1,0},{0,0}},  {I_CBERRY,1}},
+    {"纯净水",  I_PWATER, {{I_FWATER,3},{I_FILTER,1},{-1,0},{0,0}},{I_PWATER,1}},
+    {"铁锭",    I_INGOT,  {{I_IRON,3},{I_CAMP,1},{I_COAL,1},{-1,0}},{I_INGOT,1}},
+    {"铁镐",    I_IPICK,  {{I_INGOT,2},{I_STICK,2},{I_PLANK,1},{-1,0}},{I_IPICK,1}},
 };
 const int RECIPE_COUNT=sizeof(RECIPES)/sizeof(Recipe);
 
@@ -216,15 +215,13 @@ void tryInteract(){
 }
 void tryUseItem(int id){
     Player& p=g->p; bool used=false; const char* msg="不能直接使用";
-    auto U=[&](float*h,float*th,float v,const char*m){ if(removeItem(id,1)){*th=std::min(*h,*th+v); msg=m; used=true;} };
     switch(id){
         case I_BERRY: if(removeItem(id,1)){p.hunger=std::min(p.maxHunger,p.hunger+15);msg="浆果+15饥饿";used=true;} break;
         case I_CBERRY: if(removeItem(id,1)){p.hunger=std::min(p.maxHunger,p.hunger+35);msg="熟浆果+35饥饿";used=true;} break;
         case I_FWATER: if(removeItem(id,1)){p.thirst=std::min(p.maxThirst,p.thirst+20);msg="淡水+20口渴";used=true;} break;
         case I_PWATER: if(removeItem(id,1)){p.thirst=std::min(p.maxThirst,p.thirst+50);msg="纯净水+50口渴";used=true;} break;
-        case I_BANDAGE: if(removeItem(id,1)){p.hp=std::min(p.maxHp,p.hp+25);msg="绷带+25HP";used=true;} break;
+        case I_BANDAGE: if(removeItem(id,1)){p.hp=std::min(p.maxHp,p.hp+25);msg="绷带+25生命";used=true;} break;
     }
-    (void)U;
     if(used) showToast(msg);
     else if(getCount(id)>0) showToast(msg);
 }
@@ -240,6 +237,15 @@ void tryCraft(int idx){
 
 // ==================== 更新 ====================
 void update(float dt){
+    // 开屏动画
+    if(g->state==STATE_SPLASH){
+        g->splashTimer+=dt;
+        if(g->splashTimer>2.5f) g->state=STATE_MAIN;
+        g->gameTime+=dt;
+        return;
+    }
+    if(g->state!=STATE_PLAYING) { g->gameTime+=dt; return; }
+
     Player& p=g->p;
     float tvx=0;
     if(g->touchLeft) tvx=-MOVE_SPD;
@@ -315,13 +321,14 @@ void update(float dt){
         pa.x+=pa.vx*dt; pa.y+=pa.vy*dt; pa.vy+=300.f*dt; pa.life-=dt;
         if(pa.life<=0) g->parts.erase(g->parts.begin()+i);
     }
-    float tcx=p.x-g->scrW/2.f, tcy=p.y-g->scrH/2.f-50.f;
+    // 摄像机用虚拟分辨率
+    float tcx=p.x-VW/2.f, tcy=p.y-VH/2.f-30.f;
     g->camX += (tcx-g->camX)*0.1f;
     g->camY += (tcy-g->camY)*0.1f;
     if(g->camX<0) g->camX=0;
-    if(g->camX>WORLD_W*TILE-g->scrW) g->camX=WORLD_W*TILE-g->scrW;
+    if(g->camX>WORLD_W*TILE-VW) g->camX=WORLD_W*TILE-VW;
     if(g->camY<0) g->camY=0;
-    if(g->camY>WORLD_H*TILE-g->scrH) g->camY=WORLD_H*TILE-g->scrH;
+    if(g->camY>WORLD_H*TILE-VH) g->camY=WORLD_H*TILE-VH;
     if(p.hp<=0){ showToast("你死了...重新开始"); initGame(); }
     if(g->toast>0) g->toast-=dt;
 }
@@ -343,7 +350,19 @@ static void initEGL(ANativeWindow* win){
     eglQuerySurface(g->eglDisplay,g->eglSurface,EGL_HEIGHT,&g->scrH);
     setupGL();
     loadTextures();
-    LOGI("EGL init %dx%d",g->scrW,g->scrH);
+    loadFont();
+    // 计算 letterbox（保持16:9宽高比）
+    float targetAspect=(float)VW/VH;
+    float screenAspect=(float)g->scrW/g->scrH;
+    if(screenAspect>targetAspect){
+        g->viewH=g->scrH; g->viewW=(int)(g->scrH*targetAspect);
+        g->viewX=(g->scrW-g->viewW)/2; g->viewY=0;
+    } else {
+        g->viewW=g->scrW; g->viewH=(int)(g->scrW/targetAspect);
+        g->viewX=0; g->viewY=(g->scrH-g->viewH)/2;
+    }
+    g->initialized=true;
+    LOGI("EGL init %dx%d view %dx%d+%d+%d",g->scrW,g->scrH,g->viewW,g->viewH,g->viewX,g->viewY);
 }
 static void termEGL(){
     if(g->eglDisplay!=EGL_NO_DISPLAY){
@@ -356,22 +375,47 @@ static void termEGL(){
 }
 
 // ==================== 输入 ====================
+// 将屏幕坐标转换为虚拟分辨率坐标
+static void screenToVirtual(float& x, float& y){
+    x = (x - g->viewX) * VW / g->viewW;
+    y = (y - g->viewY) * VH / g->viewH;
+}
+
 static int hitBtnIdx(float x,float y){
-    for(int i=0;i<8;i++) if(btnHit(BTNS[i],x,y,(float)g->scrW,(float)g->scrH)) return i;
+    for(int i=0;i<8;i++) if(btnHit(BTNS[i],x,y)) return i;
     return -1;
 }
+
+static void handleSettingsTap(float x,float y){
+    // 设置菜单点击处理
+    float ry=y-80;
+    if(ry<0) return;
+    int row=(int)(ry/30);
+    // 行0:音效 行1:音乐 行2:震动 行3:操作模式 行4:像素放大
+    switch(row){
+        case 0: g->settings.soundOn=!g->settings.soundOn; break;
+        case 1: g->settings.musicOn=!g->settings.musicOn; break;
+        case 2: g->settings.vibrationOn=!g->settings.vibrationOn; break;
+        case 3: g->settings.touchControl=!g->settings.touchControl; break;
+        case 4: g->settings.pixelScale = g->settings.pixelScale>=4?1:g->settings.pixelScale+1; break;
+    }
+    // 返回按钮
+    if(x>VW-80 && y>VH-30){ g->showSettings=false; g->state=STATE_PAUSED; }
+}
+
 static void handlePanelTap(float x,float y){
-    float sw=g->scrW, sh=g->scrH;
+    if(g->showSettings){ handleSettingsTap(x,y); return; }
     if(g->showMenu){
-        if(y<sh*0.45f){ g->showMenu=false; g->paused=false; }
-        else if(y<sh*0.6f){ g->showMenu=false; g->paused=false; initGame(); }
-        else { g->showMenu=false; g->paused=false; g->showMain=true; }
+        if(y<VH*0.45f){ g->showMenu=false; g->state=STATE_PLAYING; }
+        else if(y<VH*0.6f){ g->showMenu=false; g->state=STATE_PLAYING; initGame(); }
+        else if(y<VH*0.75f){ g->showSettings=true; }
+        else { g->showMenu=false; g->state=STATE_MAIN; }
         return;
     }
-    if(x<sw*0.08f || x>sw*0.92f || y<sh*0.15f || y>sh*0.85f){ g->showInv=false; g->showCraft=false; return; }
-    float ry=y-sh*0.22f;
+    if(x<VW*0.05f || x>VW*0.95f || y<VH*0.12f || y>VH*0.88f){ g->showInv=false; g->showCraft=false; g->state=STATE_PLAYING; return; }
+    float ry=y-VH*0.2f;
     if(ry<0) return;
-    int row=(int)(ry/(sh*0.07f));
+    int row=(int)(ry/22);
     if(row<0) row=0;
     if(g->showInv){
         if(row<g->invDisplayCount) tryUseItem(g->invDisplay[row]);
@@ -379,19 +423,29 @@ static void handlePanelTap(float x,float y){
         if(row<RECIPE_COUNT) tryCraft(row);
     }
 }
+
 static int onInput(struct android_app* app, AInputEvent* ev){
     if(AInputEvent_getType(ev)!=AINPUT_EVENT_TYPE_MOTION) return 0;
     int32_t a=AMotionEvent_getAction(ev);
     int action=a & AMOTION_EVENT_ACTION_MASK;
     int idx=(a & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK)>>AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
-    if(g->showMain){
-        if(action==AMOTION_EVENT_ACTION_DOWN){ g->showMain=false; initGame(); }
+
+    if(g->state==STATE_SPLASH){
+        if(action==AMOTION_EVENT_ACTION_DOWN){ g->splashTimer=3.0f; }
+        return 1;
+    }
+    if(g->state==STATE_MAIN){
+        if(action==AMOTION_EVENT_ACTION_DOWN){
+            g->state=STATE_PLAYING;
+            initGame();
+        }
         return 1;
     }
     if(action==AMOTION_EVENT_ACTION_DOWN||action==AMOTION_EVENT_ACTION_POINTER_DOWN){
         int pid=AMotionEvent_getPointerId(ev,idx);
         float x=AMotionEvent_getX(ev,idx), y=AMotionEvent_getY(ev,idx);
-        if(g->showInv||g->showCraft||g->showMenu){ handlePanelTap(x,y); return 1; }
+        screenToVirtual(x,y);
+        if(g->showInv||g->showCraft||g->showMenu||g->showSettings){ handlePanelTap(x,y); return 1; }
         int b=hitBtnIdx(x,y);
         if(b>=0){
             switch(b){
@@ -400,9 +454,9 @@ static int onInput(struct android_app* app, AInputEvent* ev){
                 case 2: g->touchJump=true; g->touchIdJump=pid; break;
                 case 3: g->touchMine=true; g->touchIdMine=pid; g->mineHold=1; break;
                 case 4: tryInteract(); break;
-                case 5: g->showInv=!g->showInv; g->showCraft=false; g->showMenu=false; g->paused=g->showInv; break;
-                case 6: g->showCraft=!g->showCraft; g->showInv=false; g->showMenu=false; g->paused=g->showCraft; break;
-                case 7: g->showMenu=!g->showMenu; g->paused=g->showMenu; g->showInv=false; g->showCraft=false; break;
+                case 5: g->showInv=!g->showInv; g->showCraft=false; g->showMenu=false; g->state=g->showInv?STATE_PAUSED:STATE_PLAYING; break;
+                case 6: g->showCraft=!g->showCraft; g->showInv=false; g->showMenu=false; g->state=g->showCraft?STATE_PAUSED:STATE_PLAYING; break;
+                case 7: g->showMenu=!g->showMenu; g->state=g->showMenu?STATE_PAUSED:STATE_PLAYING; g->showInv=false; g->showCraft=false; break;
             }
         } else {
             g->mineHold=2; g->touchIdCanvas=pid;
@@ -419,7 +473,11 @@ static int onInput(struct android_app* app, AInputEvent* ev){
         int n=AMotionEvent_getPointerCount(ev);
         for(int i=0;i<n;i++){
             int pid=AMotionEvent_getPointerId(ev,i);
-            if(g->touchIdCanvas==pid){ g->canvasMineX=AMotionEvent_getX(ev,i)+g->camX; g->canvasMineY=AMotionEvent_getY(ev,i)+g->camY; }
+            if(g->touchIdCanvas==pid){
+                float mx=AMotionEvent_getX(ev,i), my=AMotionEvent_getY(ev,i);
+                screenToVirtual(mx,my);
+                g->canvasMineX=mx+g->camX; g->canvasMineY=my+g->camY;
+            }
         }
     }
     return 1;
@@ -432,8 +490,8 @@ static void onCmd(struct android_app* app, int32_t cmd){
             if(app->window){ initEGL(app->window); }
             break;
         case APP_CMD_TERM_WINDOW: termEGL(); break;
-        case APP_CMD_GAINED_FOCUS: g->paused=false; break;
-        case APP_CMD_LOST_FOCUS: g->paused=true; break;
+        case APP_CMD_GAINED_FOCUS: if(g->state==STATE_PAUSED) g->state=STATE_PLAYING; break;
+        case APP_CMD_LOST_FOCUS: if(g->state==STATE_PLAYING) g->state=STATE_PAUSED; break;
         case APP_CMD_SAVE_STATE: break;
     }
 }
@@ -454,7 +512,7 @@ extern "C" void android_main(struct android_app* app){
             if(app->destroyRequested) break;
         }
         if(g->eglDisplay!=EGL_NO_DISPLAY && g->initialized){
-            if(!g->paused && !g->showMain){
+            if(g->state==STATE_PLAYING){
                 clock_gettime(CLOCK_MONOTONIC,&ts);
                 double now=ts.tv_sec+ts.tv_nsec/1e9;
                 float dt=(float)(now-last); last=now;
@@ -462,7 +520,10 @@ extern "C" void android_main(struct android_app* app){
                 update(dt);
             } else {
                 clock_gettime(CLOCK_MONOTONIC,&ts);
-                last=ts.tv_sec+ts.tv_nsec/1e9;
+                double now=ts.tv_sec+ts.tv_nsec/1e9;
+                float dt=(float)(now-last); last=now;
+                if(dt>0.05f) dt=0.05f; if(dt<0)dt=0.016f;
+                update(dt); // 开屏/主菜单也需要更新时间
             }
             render();
             eglSwapBuffers(g->eglDisplay,g->eglSurface);

@@ -1,4 +1,4 @@
-// game.h - 共享声明
+// game.h - 共享声明 (v6.0 像素化中文版)
 #pragma once
 #include <cstdint>
 #include <EGL/egl.h>
@@ -7,7 +7,8 @@
 #include <vector>
 #include <cstring>
 
-// 常量
+// 虚拟分辨率（像素艺术固定分辨率，放大到屏幕）
+static const int VW=480, VH=270;
 static const int TILE=32;
 static const int WORLD_W=150, WORLD_H=80;
 static const int SURFACE_Y=38;
@@ -37,51 +38,69 @@ struct Recipe { const char* name; int icon; int req[4][2]; int give[2]; };
 extern Recipe RECIPES[];
 extern const int RECIPE_COUNT;
 
+// 设置项
+struct Settings {
+    int pixelScale=3;      // 像素放大倍数 (1=原生 2/3/4=像素风)
+    bool soundOn=true;
+    bool musicOn=true;
+    bool vibrationOn=true;
+    bool touchControl=true; // true=虚拟按键 false=点击
+};
+
+// 游戏状态
+enum GameState { STATE_SPLASH, STATE_MAIN, STATE_PLAYING, STATE_PAUSED, STATE_SETTINGS };
+
 struct Game {
     uint8_t tiles[WORLD_H][WORLD_W];
     uint8_t walls[WORLD_H][WORLD_W];
     Player p;
     float camX=0,camY=0,gameTime=0,dayNight=0;
-    // 输入: 键盘(调试)
     bool keys[256]={};
-    // 触控按钮状态
     bool touchLeft=false, touchRight=false, touchJump=false, touchMine=false, touchInteract=false;
-    int mineHold=0; // 0=none 1=按钮 2=点屏
+    int mineHold=0;
     int touchIdLeft=-1,touchIdRight=-1,touchIdJump=-1,touchIdMine=-1,touchIdInteract=-1,touchIdCanvas=-1;
     float canvasMineX=0,canvasMineY=0;
-    // 挖掘
     int mineTX=-1, mineTY=-1; float mineProg=0;
-    // 库存
     int inv[I_COUNT]={};
-    // 线索
     Clue clues[15]; int clueCount=0, foundClues=0;
-    // 粒子
     std::vector<Particle> parts;
-    // UI
-    bool initialized=false, paused=false, showInv=false, showCraft=false, showMenu=false, showMain=true;
+    // UI状态
+    GameState state=STATE_SPLASH;
+    float splashTimer=0;
+    bool showInv=false, showCraft=false, showMenu=false, showSettings=false;
     int selectedSlot=0;
     float toast=0; char toastText[160]={};
-    // 面板显示列表
     int invDisplay[24]; int invDisplayCount=0;
-    // 屏幕
+    // 屏幕尺寸（真实物理分辨率）
     int scrW=0, scrH=0;
+    // 虚拟分辨率渲染偏移（letterbox）
+    int viewX=0, viewY=0, viewW=0, viewH=0;
+    // 设置
+    Settings settings;
     // EGL
     EGLDisplay eglDisplay=EGL_NO_DISPLAY;
     EGLSurface eglSurface=EGL_NO_SURFACE;
     EGLContext eglContext=EGL_NO_CONTEXT;
     // GL
     GLuint prog=0, aPos=0, aUV=0, aColor=0, uTex=0, uW=0, uH=0, texWhite=0;
-    GLuint texPlayer[6]={}; // 0=idle 1-4=walk 5=jump
+    // FBO（像素化渲染）
+    GLuint fbo=0, fboTex=0;
+    // 字体纹理
+    GLuint texFont=0;
+    // 游戏纹理
+    GLuint texPlayer[6]={};
     GLuint texGrass=0,texDirt=0,texStone=0,texIron=0,texCoal=0,texGold=0,texWater=0,texTree=0,texBerry=0,texClue=0;
+    // 兼容
+    bool initialized=false, paused=false, showMain=false;
 };
 
 extern Game* g;
 
-// 按钮(比例坐标 0-1, 左上原点): 0left 1right 2jump 3mine 4interact 5inv 6craft 7menu
+// 按钮(虚拟分辨率坐标): 0left 1right 2jump 3mine 4interact 5inv 6craft 7menu
 struct Btn { float x,y,w,h; const char* label; };
 extern Btn BTNS[8];
-inline bool btnHit(const Btn& b,float px,float py,float sw,float sh){
-    return px>=b.x*sw && px<=(b.x+b.w)*sw && py>=b.y*sh && py<=(b.y+b.h)*sh;
+inline bool btnHit(const Btn& b,float px,float py){
+    return px>=b.x && px<=(b.x+b.w) && py>=b.y && py<=(b.y+b.h);
 }
 
 // 函数声明
@@ -90,11 +109,11 @@ void update(float dt);
 void render();
 void setupGL();
 void loadTextures();
+void loadFont();
 void handleInput(AInputEvent* ev);
 void showToast(const char* msg);
 void tryInteract();
 void tryUseItem(int id);
 void tryCraft(int idx);
-// 内部辅助（render需要）
 int getTileAt(int tx,int ty);
 float mineTime(int t);
