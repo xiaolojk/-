@@ -1,17 +1,11 @@
 package com.orgc.lostbluesea;
 
-import android.app.Activity;
+import android.app.NativeActivity;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.view.View;
 
-public class GameActivity extends Activity {
-    static { System.loadLibrary("game"); }
-    native void nativeOnCreate(Activity act);
-    native void nativeOnDestroy();
-    native void nativeOnPause();
-    native void nativeOnResume();
-
+public class GameActivity extends NativeActivity {
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -21,10 +15,5 @@ public class GameActivity extends Activity {
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_FULLSCREEN
             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        nativeOnCreate(this);
     }
-
-    @Override protected void onDestroy() { nativeOnDestroy(); super.onDestroy(); }
-    @Override protected void onPause() { nativeOnPause(); super.onPause(); }
-    @Override protected void onResume() { nativeOnResume(); super.onResume(); }
 }
