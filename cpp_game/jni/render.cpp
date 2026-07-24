@@ -1,10 +1,12 @@
-// render.cpp - GLES2 渲染 (v8.0 抗锯齿字体版)
+// render.cpp - GLES2 渲染 (v9.0 系统字体版)
 #include "game.h"
 #include "sprites.h"
-#include "font_data.h"
 #include <GLES2/gl2.h>
 #include <cmath>
 #include <cstring>
+#include <jni.h>
+#include <android/log.h>
+#include <android_native_app_glue.h>
 
 // ==================== 着色器 ====================
 void setupGL(){
@@ -72,35 +74,110 @@ void loadTextures(){
     g->texClue=uploadCanvas(makeClue());
 }
 
-// ==================== 字体加载 ====================
+// ==================== 字体系统 (Android系统字体) ====================
+// 通过JNI从Java端获取Android系统字体渲染的图集
+static const int MAX_FONT_CHARS = 512;
+static uint16_t g_fontUnicodes[MAX_FONT_CHARS];
+static int g_fontCount = 0;
+static int g_fontCharSize = 32;
+static int g_fontCols = 16;
+static int g_fontAtlasW = 512;
+static int g_fontAtlasH = 1024;
+
+static int fontLookup(uint16_t unicode){
+    for(int i=0;i<g_fontCount;i++){
+        if(g_fontUnicodes[i]==unicode) return i;
+    }
+    return -1;
+}
+
 void loadFont(){
-    // 创建字体纹理图集 (16列 x N行, 每字符32x32, 8bpp抗锯齿)
-    // 使用POT纹理(512x1024)确保所有GPU兼容
-    int cols=16;
-    // POT atlas尺寸 (512x1024)
-    int atlasW=512;
-    int atlasH=1024;
-    uint8_t* data=new uint8_t[atlasW*atlasH*4];
-    memset(data,0,atlasW*atlasH*4);
-    for(int i=0;i<FONT_CHAR_COUNT;i++){
-        int col=i%cols, row=i/cols;
-        for(int y=0;y<FONT_CHAR_SIZE;y++){
-            for(int x=0;x<FONT_CHAR_SIZE;x++){
-                uint8_t gray=FONT_BITMAPS[i][y*FONT_CHAR_SIZE+x];
-                if(gray>0){
-                    int idx=((row*FONT_CHAR_SIZE+y)*atlasW + (col*FONT_CHAR_SIZE+x))*4;
-                    data[idx]=255; data[idx+1]=255; data[idx+2]=255; data[idx+3]=gray;
-                }
-            }
+    // 通过JNI调用Java静态方法获取系统字体数据
+    JNIEnv* env = nullptr;
+
+    extern struct android_app* g_app;
+    if(!g_app || !g_app->activity->vm){
+        __android_log_print(ANDROID_LOG_ERROR, "Game", "No JavaVM available for font");
+        return;
+    }
+    JavaVM* vm = g_app->activity->vm;
+    bool attached = false;
+    if(vm->GetEnv((void**)&env, JNI_VERSION_1_4) != JNI_OK){
+        if(vm->AttachCurrentThread(&env, nullptr) == JNI_OK){
+            attached = true;
+        } else {
+            __android_log_print(ANDROID_LOG_ERROR, "Game", "Failed to attach thread for font");
+            return;
         }
     }
-    glGenTextures(1,&g->texFont); glBindTexture(GL_TEXTURE_2D,g->texFont);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,atlasW,atlasH,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-    delete[] data;
+
+    jclass cls = env->FindClass("com/orgc/lostbluesea/GameActivity");
+    if(!cls){
+        __android_log_print(ANDROID_LOG_ERROR, "Game", "GameActivity class not found");
+        if(attached) vm->DetachCurrentThread();
+        return;
+    }
+
+    // 获取字符列表
+    jmethodID getUnicodes = env->GetStaticMethodID(cls, "getFontUnicodes", "()[C");
+    jmethodID getRgba = env->GetStaticMethodID(cls, "getFontRgba", "()[B");
+    jmethodID getW = env->GetStaticMethodID(cls, "getFontAtlasW", "()I");
+    jmethodID getH = env->GetStaticMethodID(cls, "getFontAtlasH", "()I");
+    jmethodID getSize = env->GetStaticMethodID(cls, "getFontSize", "()I");
+    jmethodID getCols = env->GetStaticMethodID(cls, "getFontCols", "()I");
+
+    if(!getUnicodes || !getRgba || !getW || !getH || !getSize || !getCols){
+        __android_log_print(ANDROID_LOG_ERROR, "Game", "Font methods not found");
+        if(attached) vm->DetachCurrentThread();
+        return;
+    }
+
+    jcharArray ju = (jcharArray)env->CallStaticObjectMethod(cls, getUnicodes);
+    jbyteArray jr = (jbyteArray)env->CallStaticObjectMethod(cls, getRgba);
+    int aw = env->CallStaticIntMethod(cls, getW);
+    int ah = env->CallStaticIntMethod(cls, getH);
+    int cs = env->CallStaticIntMethod(cls, getSize);
+    int cols = env->CallStaticIntMethod(cls, getCols);
+
+    if(!ju || !jr || aw<=0 || ah<=0){
+        __android_log_print(ANDROID_LOG_ERROR, "Game", "Font data not available");
+        if(attached) vm->DetachCurrentThread();
+        return;
+    }
+
+    // 提取unicode码点
+    jsize count = env->GetArrayLength(ju);
+    if(count > MAX_FONT_CHARS) count = MAX_FONT_CHARS;
+    jchar* uc = env->GetCharArrayElements(ju, nullptr);
+    for(int i=0;i<count;i++) g_fontUnicodes[i] = uc[i];
+    env->ReleaseCharArrayElements(ju, uc, JNI_ABORT);
+
+    // 提取RGBA数据
+    jbyte* rgba = env->GetByteArrayElements(jr, nullptr);
+
+    g_fontCount = count;
+    g_fontCharSize = cs;
+    g_fontCols = cols;
+    g_fontAtlasW = aw;
+    g_fontAtlasH = ah;
+
+    // 生成字体纹理
+    if(g->texFont==0) glGenTextures(1,&g->texFont);
+    glBindTexture(GL_TEXTURE_2D, g->texFont);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, aw, ah, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    env->ReleaseByteArrayElements(jr, rgba, JNI_ABORT);
+    env->DeleteLocalRef(cls);
+    if(ju) env->DeleteLocalRef(ju);
+    if(jr) env->DeleteLocalRef(jr);
+
+    if(attached) vm->DetachCurrentThread();
+
+    __android_log_print(ANDROID_LOG_INFO, "Game", "System font loaded: %d chars, %dx%d atlas", count, aw, ah);
 }
 
 // ==================== 绘制原语 (虚拟分辨率坐标) ====================
@@ -122,12 +199,8 @@ static void sprite(GLuint t,float x,float y,float w,float h,bool flip=false){
     drawQuad(t,x,y,w,h,flip,1,1,1,1);
 }
 
-// UTF-8中文文本绘制 (32x32抗锯齿字体)
+// UTF-8中文文本绘制 (Android系统字体)
 static void text(float x,float y,const char* s,float sz,float r,float gg,float b,float a=1.f){
-    int cols=16;
-    // POT atlas尺寸 (512x1024)
-    float atlasW=512.0f;
-    float atlasH=1024.0f;
     float cx=x;
     for(const unsigned char* p=(const unsigned char*)s; *p; ){
         uint16_t unicode;
@@ -138,11 +211,11 @@ static void text(float x,float y,const char* s,float sz,float r,float gg,float b
         if(unicode==' '){ cx+=sz*0.6f; continue; }
         int idx=fontLookup(unicode);
         if(idx<0){ cx+=sz+1; continue; }
-        int col=idx%cols, row=idx/cols;
-        float u0=(float)(col*FONT_CHAR_SIZE)/atlasW;
-        float v0=(float)(row*FONT_CHAR_SIZE)/atlasH;
-        float u1=u0+(float)FONT_CHAR_SIZE/atlasW;
-        float v1=v0+(float)FONT_CHAR_SIZE/atlasH;
+        int col=idx%g_fontCols, row=idx/g_fontCols;
+        float u0=(float)(col*g_fontCharSize)/(float)g_fontAtlasW;
+        float v0=(float)(row*g_fontCharSize)/(float)g_fontAtlasH;
+        float u1=u0+(float)g_fontCharSize/(float)g_fontAtlasW;
+        float v1=v0+(float)g_fontCharSize/(float)g_fontAtlasH;
         float v[]={ cx,y,u0,v0,r,gg,b,a, cx+sz,y,u1,v0,r,gg,b,a,
                     cx,y+sz,u0,v1,r,gg,b,a, cx+sz,y+sz,u1,v1,r,gg,b,a };
         glBindTexture(GL_TEXTURE_2D,g->texFont);
@@ -435,7 +508,7 @@ static void renderMain(){
     rect(bx,by,bw,bh,0.15f,0.5f,0.78f,0.9f);
     rect(bx,by,bw,2,0.3f,0.75f,0.95f,0.4f);
     text(cx-textW("点击开始",10)/2, by+8, "点击开始", 10, 1,1,1);
-    text(cx-textW("v8.0",6)/2, VH*0.9f, "v8.0", 6, 0.35f,0.35f,0.35f);
+    text(cx-textW("v9.0",6)/2, VH*0.9f, "v9.0", 6, 0.35f,0.35f,0.35f);
 }
 
 // ==================== 主渲染 ====================

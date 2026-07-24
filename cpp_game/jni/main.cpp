@@ -11,6 +11,7 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,"LBS",__VA_ARGS__)
 
 Game* g=nullptr;
+struct android_app* g_app=nullptr;
 
 // 按钮(虚拟分辨率坐标480x270): 0左 1右 2跳 3挖 4用 5背包 6制作 7菜单
 Btn BTNS[8] = {
@@ -547,6 +548,7 @@ static void onCmd(struct android_app* app, int32_t cmd){
 
 // ==================== 入口 ====================
 extern "C" void android_main(struct android_app* app){
+    g_app=app;
     g=new Game();
     app->onAppCmd=onCmd;
     app->onInputEvent=onInput;
