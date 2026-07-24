@@ -74,7 +74,7 @@ void loadTextures(){
 
 // ==================== 字体加载 ====================
 void loadFont(){
-    // 创建字体纹理图集 (16列 x N行, 每字符16x16)
+    // 创建字体纹理图集 (16列 x N行, 每字符24x24, 8bpp抗锯齿)
     int cols=16;
     int rows=(FONT_CHAR_COUNT+cols-1)/cols;
     int atlasW=cols*FONT_CHAR_SIZE;
@@ -84,19 +84,19 @@ void loadFont(){
     for(int i=0;i<FONT_CHAR_COUNT;i++){
         int col=i%cols, row=i/cols;
         for(int y=0;y<FONT_CHAR_SIZE;y++){
-            uint16_t bits=FONT_BITMAPS[i][y];
             for(int x=0;x<FONT_CHAR_SIZE;x++){
-                if(bits & (1<<(FONT_CHAR_SIZE-1-x))){
+                uint8_t gray=FONT_BITMAPS[i][y*FONT_CHAR_SIZE+x];
+                if(gray>0){
                     int idx=((row*FONT_CHAR_SIZE+y)*atlasW + (col*FONT_CHAR_SIZE+x))*4;
-                    data[idx]=255; data[idx+1]=255; data[idx+2]=255; data[idx+3]=255;
+                    data[idx]=255; data[idx+1]=255; data[idx+2]=255; data[idx+3]=gray;
                 }
             }
         }
     }
     glGenTextures(1,&g->texFont); glBindTexture(GL_TEXTURE_2D,g->texFont);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,atlasW,atlasH,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
     delete[] data;
@@ -121,27 +121,12 @@ static void sprite(GLuint t,float x,float y,float w,float h,bool flip=false){
     drawQuad(t,x,y,w,h,flip,1,1,1,1);
 }
 
-// 中文字体绘制
-static void drawChar(float x,float y,uint16_t unicode,float sz,float r,float gg,float b){
-    int idx=fontLookup(unicode);
-    if(idx<0) return;
-    int cols=16;
-    int col=idx%cols, row=idx/cols;
-    float u0=(float)(col*FONT_CHAR_SIZE)/(cols*FONT_CHAR_SIZE);
-    float v0=(float)(row*FONT_CHAR_SIZE)/(((FONT_CHAR_COUNT+cols-1)/cols)*FONT_CHAR_SIZE);
-    float u1=u0+(float)FONT_CHAR_SIZE/(cols*FONT_CHAR_SIZE);
-    float v1=v0+(float)FONT_CHAR_SIZE/(((FONT_CHAR_COUNT+cols-1)/cols)*FONT_CHAR_SIZE);
-    float v[]={ x,y,u0,v0,r,gg,b,1, x+sz,y,u1,v0,r,gg,b,1,
-                x,y+sz,u0,v1,r,gg,b,1, x+sz,y+sz,u1,v1,r,gg,b,1 };
-    glBindTexture(GL_TEXTURE_2D,g->texFont);
-    glVertexAttribPointer(g->aPos,2,GL_FLOAT,GL_FALSE,32,v);
-    glVertexAttribPointer(g->aUV,2,GL_FLOAT,GL_FALSE,32,v+2);
-    glVertexAttribPointer(g->aColor,4,GL_FLOAT,GL_FALSE,32,v+4);
-    glDrawArrays(GL_TRIANGLE_STRIP,0,4);
-}
-
-// UTF-8中文文本绘制
+// UTF-8中文文本绘制 (24x24抗锯齿字体)
 static void text(float x,float y,const char* s,float sz,float r,float gg,float b,float a=1.f){
+    int cols=16;
+    int rows=(FONT_CHAR_COUNT+cols-1)/cols;
+    float atlasW=(float)(cols*FONT_CHAR_SIZE);
+    float atlasH=(float)(rows*FONT_CHAR_SIZE);
     float cx=x;
     for(const unsigned char* p=(const unsigned char*)s; *p; ){
         uint16_t unicode;
@@ -150,15 +135,13 @@ static void text(float x,float y,const char* s,float sz,float r,float gg,float b
         else if((*p&0xF0)==0xE0){ unicode=((*p&0x0F)<<12)|((*(p+1)&0x3F)<<6)|(*(p+2)&0x3F); p+=3; }
         else { p++; continue; }
         if(unicode==' '){ cx+=sz*0.6f; continue; }
-        // 使用alpha覆盖drawChar的alpha
         int idx=fontLookup(unicode);
         if(idx<0){ cx+=sz+1; continue; }
-        int cols=16;
         int col=idx%cols, row=idx/cols;
-        float u0=(float)(col*FONT_CHAR_SIZE)/(cols*FONT_CHAR_SIZE);
-        float v0=(float)(row*FONT_CHAR_SIZE)/(((FONT_CHAR_COUNT+cols-1)/cols)*FONT_CHAR_SIZE);
-        float u1=u0+(float)FONT_CHAR_SIZE/(cols*FONT_CHAR_SIZE);
-        float v1=v0+(float)FONT_CHAR_SIZE/(((FONT_CHAR_COUNT+cols-1)/cols)*FONT_CHAR_SIZE);
+        float u0=(float)(col*FONT_CHAR_SIZE)/atlasW;
+        float v0=(float)(row*FONT_CHAR_SIZE)/atlasH;
+        float u1=u0+(float)FONT_CHAR_SIZE/atlasW;
+        float v1=v0+(float)FONT_CHAR_SIZE/atlasH;
         float v[]={ cx,y,u0,v0,r,gg,b,a, cx+sz,y,u1,v0,r,gg,b,a,
                     cx,y+sz,u0,v1,r,gg,b,a, cx+sz,y+sz,u1,v1,r,gg,b,a };
         glBindTexture(GL_TEXTURE_2D,g->texFont);
@@ -322,8 +305,8 @@ static void renderPanel(){
 
     if(g->showSettings){
         text(VW*0.1f, VH*0.14f, "设置", 12, 0.25f,0.7f,0.95f);
-        const char* labels[]={"音效","音乐","震动","操作模式","像素放大"};
-        for(int i=0;i<5;i++){
+        const char* labels[]={"音效","音乐","震动","操作模式","像素放大","按键位置"};
+        for(int i=0;i<6;i++){
             float yy=ry+i*30;
             if(i%2) rect(VW*0.08f,yy,VW*0.84f,28,1,1,1,0.04f);
             text(VW*0.1f, yy+8, labels[i], 8, 0.8f,0.85f,1);
@@ -334,6 +317,7 @@ static void renderPanel(){
                 case 2: val=g->settings.vibrationOn?"开":"关"; break;
                 case 3: val=g->settings.touchControl?"虚拟按键":"点击"; break;
                 case 4: val=g->settings.pixelScale==1?"高":g->settings.pixelScale==2?"中":g->settings.pixelScale==3?"低":"超低"; break;
+                case 5: val="自定义>"; break;
             }
             text(VW*0.6f, yy+8, val, 8, 0.3f,1,0.3f);
         }
@@ -498,6 +482,25 @@ static void renderGameContent(){
     if(dn<0.35f) rect(0,0,VW,VH,0,0,0.08f,0.4f-dn);
 
     renderHUD();
+    // 按键自定义模式
+    if(g->customizeControls){
+        // 半透明遮罩
+        rect(0,0,VW,VH,0,0,0,0.5f);
+        text(VW/2-textW("拖拽按钮调整位置",10)/2, VH-20, "拖拽按钮调整位置", 10, 1,0.85f,0.3f);
+        text(VW/2-textW("点击空白处完成",8)/2, VH-8, "点击空白处完成", 8, 0.7f,0.7f,0.7f);
+        // 重置按钮
+        rect(VW/2-30, VH-50, 60, 22, 0.8f,0.3f,0.3f,0.85f);
+        text(VW/2-textW("重置默认",7)/2, VH-46, "重置默认", 7, 1,1,1);
+        float resetBtnX=VW/2-30, resetBtnY=VH-50, resetBtnW=60, resetBtnH=22;
+        // 高亮所有按钮
+        for(int i=0;i<8;i++){
+            Btn& b=BTNS[i];
+            rect(b.x-2,b.y-2,b.w+4,b.h+4, 1,1,0,0.5f);
+        }
+        // 检查重置按钮点击 (在handleInput中无法直接检测, 这里把重置逻辑放在onInput)
+        g->resetBtnX=resetBtnX; g->resetBtnY=resetBtnY;
+        g->resetBtnW=resetBtnW; g->resetBtnH=resetBtnH;
+    }
     drawBtn(BTNS[0],g->touchLeft);
     drawBtn(BTNS[1],g->touchRight);
     drawBtn(BTNS[2],g->touchJump);

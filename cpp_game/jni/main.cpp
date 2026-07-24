@@ -391,13 +391,19 @@ static void handleSettingsTap(float x,float y){
     float ry=y-80;
     if(ry<0) return;
     int row=(int)(ry/30);
-    // 行0:音效 行1:音乐 行2:震动 行3:操作模式 行4:像素放大
+    // 行0:音效 行1:音乐 行2:震动 行3:操作模式 行4:像素放大 行5:按键位置
     switch(row){
         case 0: g->settings.soundOn=!g->settings.soundOn; break;
         case 1: g->settings.musicOn=!g->settings.musicOn; break;
         case 2: g->settings.vibrationOn=!g->settings.vibrationOn; break;
         case 3: g->settings.touchControl=!g->settings.touchControl; break;
         case 4: g->settings.pixelScale = g->settings.pixelScale>=4?1:g->settings.pixelScale+1; break;
+        case 5:
+            g->showSettings=false;
+            g->customizeControls=true;
+            g->state=STATE_PLAYING;
+            showToast("拖拽按钮调整位置, 点击空白处完成");
+            break;
     }
     // 返回按钮
     if(x>VW-80 && y>VH-30){ g->showSettings=false; g->state=STATE_PAUSED; }
@@ -445,6 +451,37 @@ static int onInput(struct android_app* app, AInputEvent* ev){
         int pid=AMotionEvent_getPointerId(ev,idx);
         float x=AMotionEvent_getX(ev,idx), y=AMotionEvent_getY(ev,idx);
         screenToVirtual(x,y);
+        // 按键自定义模式
+        if(g->customizeControls){
+            // 检查重置按钮
+            if(x>=g->resetBtnX && x<=g->resetBtnX+g->resetBtnW && y>=g->resetBtnY && y<=g->resetBtnY+g->resetBtnH){
+                // 重置为默认位置
+                Btn def[8] = {
+                    {10,  220, 60, 45, "←"},
+                    {78,  220, 60, 45, "→"},
+                    {146, 220, 60, 45, "跳"},
+                    {354, 220, 60, 45, "挖"},
+                    {420, 220, 50, 45, "用"},
+                    {180, 4,   60, 16, "背包"},
+                    {244, 4,   60, 16, "制作"},
+                    {308, 4,   60, 16, "菜单"},
+                };
+                for(int i=0;i<8;i++){ BTNS[i].x=def[i].x; BTNS[i].y=def[i].y; g->settings.btnX[i]=0; g->settings.btnY[i]=0; }
+                showToast("已重置为默认位置");
+                return 1;
+            }
+            int b=hitBtnIdx(x,y);
+            if(b>=0){
+                g->dragBtnIdx=b;
+                g->dragOffX=x-BTNS[b].x;
+                g->dragOffY=y-BTNS[b].y;
+            } else {
+                // 点击空白处退出自定义模式
+                g->customizeControls=false;
+                showToast("按键位置已保存");
+            }
+            return 1;
+        }
         if(g->showInv||g->showCraft||g->showMenu||g->showSettings){ handlePanelTap(x,y); return 1; }
         int b=hitBtnIdx(x,y);
         if(b>=0){
@@ -463,6 +500,7 @@ static int onInput(struct android_app* app, AInputEvent* ev){
             g->canvasMineX=x+g->camX; g->canvasMineY=y+g->camY;
         }
     } else if(action==AMOTION_EVENT_ACTION_UP||action==AMOTION_EVENT_ACTION_POINTER_UP){
+        if(g->customizeControls){ g->dragBtnIdx=-1; return 1; }
         int pid=AMotionEvent_getPointerId(ev,idx);
         if(g->touchIdLeft==pid){ g->touchLeft=false; g->touchIdLeft=-1; }
         if(g->touchIdRight==pid){ g->touchRight=false; g->touchIdRight=-1; }
@@ -470,6 +508,17 @@ static int onInput(struct android_app* app, AInputEvent* ev){
         if(g->touchIdMine==pid){ g->touchMine=false; g->touchIdMine=-1; if(g->mineHold==1)g->mineHold=0; }
         if(g->touchIdCanvas==pid){ g->touchIdCanvas=-1; if(g->mineHold==2)g->mineHold=0; g->mineTX=-1; }
     } else if(action==AMOTION_EVENT_ACTION_MOVE){
+        // 按键自定义模式拖拽
+        if(g->customizeControls && g->dragBtnIdx>=0){
+            float mx=AMotionEvent_getX(ev,idx), my=AMotionEvent_getY(ev,idx);
+            screenToVirtual(mx,my);
+            BTNS[g->dragBtnIdx].x=mx-g->dragOffX;
+            BTNS[g->dragBtnIdx].y=my-g->dragOffY;
+            // 保存自定义位置
+            g->settings.btnX[g->dragBtnIdx]=BTNS[g->dragBtnIdx].x;
+            g->settings.btnY[g->dragBtnIdx]=BTNS[g->dragBtnIdx].y;
+            return 1;
+        }
         int n=AMotionEvent_getPointerCount(ev);
         for(int i=0;i<n;i++){
             int pid=AMotionEvent_getPointerId(ev,i);

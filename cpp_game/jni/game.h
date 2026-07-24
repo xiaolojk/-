@@ -45,6 +45,9 @@ struct Settings {
     bool musicOn=true;
     bool vibrationOn=true;
     bool touchControl=true; // true=虚拟按键 false=点击
+    // 自定义按键位置 (虚拟分辨率坐标, 0=使用默认)
+    float btnX[8]={};
+    float btnY[8]={};
 };
 
 // 游戏状态
@@ -68,6 +71,10 @@ struct Game {
     GameState state=STATE_SPLASH;
     float splashTimer=0;
     bool showInv=false, showCraft=false, showMenu=false, showSettings=false;
+    bool customizeControls=false; // 按键自定义模式
+    int dragBtnIdx=-1;           // 正在拖拽的按钮索引
+    float dragOffX=0, dragOffY=0; // 拖拽偏移
+    float resetBtnX=0, resetBtnY=0, resetBtnW=0, resetBtnH=0; // 重置按钮位置
     int selectedSlot=0;
     float toast=0; char toastText[160]={};
     int invDisplay[24]; int invDisplayCount=0;
